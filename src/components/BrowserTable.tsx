@@ -203,18 +203,24 @@ export function BrowserTable({ reader, onHUD }: { reader: BrowserReaderState; on
           <h3>{automation?.running ? 'Automatic play is running' : 'Manual play'}</h3>
           <p>
             {automation?.reason ||
-              'Automatic play is available in the browser toolbar. Set your limits there, then press START AUTO yourself.'}
+              'Automatic play is available in the Auto tab of the browser toolbar. Set your round bet, total loss, rounds, and time limits there, then press START AUTO.'}
           </p>
         </div>
         <div className="automation-facts">
           <strong>
-            {automation?.count || 0}
-            <span>auto actions this run</span>
+            {automation?.rounds ?? 0}
+            {automation?.maxRounds ? `/${automation.maxRounds}` : ''}
+            <span>rounds played</span>
           </strong>
           <strong>
             {snapshot?.currency || ''}
-            {((automation?.spent || 0) / 100).toFixed(2)}
-            <span>submitted spend</span>
+            {((automation?.roundSpent || 0) / 100).toFixed(2)}
+            <span>round bet</span>
+          </strong>
+          <strong>
+            {snapshot?.currency || ''}
+            {((automation?.loss ?? automation?.spent ?? 0) / 100).toFixed(2)}
+            <span>net loss</span>
           </strong>
           {automation?.running ? (
             <button className="stop-auto" onClick={() => window.river?.stopAuto()}>

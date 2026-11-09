@@ -35,7 +35,7 @@ export function makePlan(
     );
   const canAggress = s.actions.includes('bet') || s.actions.includes('raise');
   const preflop = evaluated.preflop;
-  let fraction = preflop ? preflop.fraction : result.equity > 0.8 ? 0.75 : 0.5;
+  let fraction = preflop ? preflop.fraction : result.equity > 0.85 ? 1.0 : 0.5;
   const foldNeeded = fraction / (1 + fraction);
   if (s.call === 0 && canAggress && s.opponents === 1 && fold && fold.lower > foldNeeded + 0.05) {
     if (flushDraw && result.equity > 0.2 && result.equity < 0.58 && mix(s.handId + 'semi') < 20) {
@@ -77,7 +77,18 @@ export function makePlan(
       explanation =
         'Aggression is not sized because legal bounds are unreadable. Use the verified check/call price.';
     } else {
-      const desired = (s.heroBet || 0) + s.call! + fraction * (s.pot! + s.call!);
+      let desired = (s.heroBet || 0) + s.call! + fraction * (s.pot! + s.call!);
+      if (
+        preflop &&
+        preflop.spot === 'unopened' &&
+        buttonAmount != null &&
+        buttonAmount >= minimum &&
+        buttonAmount <= maximum
+      ) {
+        desired = buttonAmount;
+      } else if (buttonAmount != null && Math.abs(buttonAmount - desired) <= 0.02) {
+        desired = buttonAmount;
+      }
       target =
         s.sizing?.editable === false && buttonAmount != null && buttonAmount <= maximum
           ? cents(buttonAmount)

@@ -26,10 +26,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .header #minimize:hover{color:var(--text)}
 
 /* Tabs */
-.river-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:12px 0 10px;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px}
-.river-tabs button{border:0;background:none;border-radius:7px;padding:7px 2px;font-size:11px;font-weight:650;color:var(--text-3)}
+.river-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:2px;margin:12px 0 10px;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px}
+.river-tabs button{border:0;background:none;border-radius:7px;padding:7px 2px;font-size:11px;font-weight:650;color:var(--text-3);display:inline-flex;align-items:center;justify-content:center;gap:4px}
 .river-tabs button:hover{color:var(--text-2)}
 .river-tabs button[aria-selected=true]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.river-tabs button.running{color:var(--win)}
+.river-tabs button.running:before{content:'';width:5px;height:5px;border-radius:50%;background:var(--win);box-shadow:0 0 0 2px var(--win-soft)}
 .river-pane{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent;margin:0 -4px;padding:0 4px 2px}
 .river-pane[hidden]{display:none!important}
 .pane-title{font-size:15px;font-weight:750;letter-spacing:-.2px;margin:2px 0 3px}
@@ -70,6 +72,9 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .decision-kicker{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--accent)}
 .advice{display:block;margin:4px 0 2px;padding:0;border:0;min-height:0}
 .action{display:block;font-size:28px;line-height:1.15;font-weight:800;letter-spacing:-.6px;color:var(--text);font-variant-numeric:tabular-nums}
+#auto-confirm-btn{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;width:100%;padding:10px 14px;background:#10b981;color:#fff;border:1px solid #059669;border-radius:9px;font-size:13px;font-weight:800;letter-spacing:.5px;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,.35);transition:transform .1s,background .15s}
+#auto-confirm-btn:hover{background:#059669;transform:translateY(-1px)}
+#auto-confirm-btn[hidden]{display:none!important}
 .equity{display:none}
 .decision-subtitle{font-size:12px;font-weight:650;color:var(--text);margin:0 0 3px}
 .hint{font-size:11px;line-height:1.5;color:var(--text-2);margin:0;min-height:0}
@@ -120,26 +125,36 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .reader-error{font-size:11px;color:var(--loss);margin:8px 0 0}
 .reader-error:empty{display:none}
 
-/* Automatic play (Bet365 only): restyled controls */
-.auto-panel{margin:0;padding:0;border:0}
-.auto-panel summary{font-size:12px;font-weight:700;cursor:pointer;color:var(--text);list-style:none}
-.auto-panel summary::-webkit-details-marker{display:none}
-.auto-panel summary:before{content:'›';display:inline-block;margin-right:6px;color:var(--text-3);transition:transform .15s}
-.auto-panel[open] summary:before{transform:rotate(90deg)}
-.auto-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 6px}
-.auto-fields label{font-size:10px;color:var(--text-3)}
-.auto-fields input{display:block;width:100%;margin-top:4px;padding:7px 8px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:7px;font-size:12px;font-weight:650;font-variant-numeric:tabular-nums}
-.auto-options{font-size:11px;color:var(--text-2);margin:8px 0}
-.auto-options label{display:flex;align-items:center;gap:6px;margin:6px 0}
-.auto-options input[type=checkbox]{accent-color:var(--accent)}
-.auto-options select{margin-left:auto;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;padding:3px 6px}
-.auto-buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.auto-buttons button{border-radius:8px;padding:9px;font-size:11px;font-weight:750;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--text)}
+/* Automatic play (Bet365 only): dedicated Auto tab */
+.auto-panel{margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:10px}
+.auto-hero{padding:11px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:11px}
+.auto-hero-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.auto-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;font-size:9px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;background:var(--surface-3);color:var(--text-2);border:1px solid var(--line-strong)}
+.auto-badge.active{background:var(--win-soft);color:var(--win);border-color:color-mix(in srgb,var(--win) 45%,transparent)}
+.auto-badge.stopped{background:var(--warn-soft);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.auto-esc{font-size:10px;color:var(--text-3);font-weight:600}
+.auto-status{font-size:11px;font-weight:600;color:var(--text);line-height:1.45;font-variant-numeric:tabular-nums}
+.auto-live-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.auto-live-grid>div{min-width:0}
+.auto-live-grid span{display:block;font-size:9px;font-weight:650;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3)}
+.auto-live-grid strong{display:block;font-size:13px;font-weight:750;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.auto-buttons{display:grid;grid-template-columns:1.35fr 1fr;gap:6px}
+.auto-buttons button{border-radius:9px;padding:9px 10px;font-size:11px;font-weight:800;letter-spacing:.3px;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--text)}
 .auto-buttons #auto-start{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.auto-buttons #auto-start:hover:not(:disabled){background:var(--accent-strong);border-color:var(--accent-strong)}
 .auto-buttons #auto-start:disabled{opacity:.45;cursor:default}
-.auto-status{font-size:11px;color:var(--text-2);margin-top:8px;font-variant-numeric:tabular-nums}
+.auto-buttons #auto-stop:hover{border-color:var(--warn);color:var(--warn)}
+.auto-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.auto-presets button{border:1px solid var(--line);background:var(--surface-2);color:var(--text-2);border-radius:7px;padding:5px 6px;font-size:10px;font-weight:650}
+.auto-presets button:hover{border-color:var(--accent);color:var(--text)}
+.auto-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0}
+.auto-fields label{display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:650;color:var(--text-2)}
+.auto-fields input,.auto-fields select{display:block;width:100%;padding:7px 9px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:8px;font-size:12px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.auto-options{display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--text-2);margin:0;padding:8px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px}
+.auto-options label{display:flex;align-items:center;gap:7px;margin:0;cursor:pointer}
+.auto-options input[type=checkbox]{accent-color:var(--accent);margin:0}
 .tiny{display:none}
-.auto-panel .tiny{display:block;font-size:10px;color:var(--text-3);line-height:1.5}
+.auto-panel .tiny{display:block;font-size:10px;color:var(--text-3);line-height:1.45;margin:0}
 .auto-active{border-color:var(--warn)}
 .auto-notice{font-size:11px;line-height:1.5;color:var(--warn);margin:0 0 10px;padding:8px 10px;border-radius:8px;background:var(--warn-soft)}
 

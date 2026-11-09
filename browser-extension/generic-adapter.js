@@ -736,7 +736,7 @@
       pot: null,
       call: null,
       currency: '',
-      heroBet: null,
+      heroBet: 0,
       actionAmounts: {},
       actorSeat: null,
       timeLeft: null,

@@ -67,19 +67,59 @@
         };
     }
   }
-  function automation(root, status) {
+  function formatTimeLeft(sec, fallbackMinutes) {
+    if (Number.isFinite(sec) && sec > 0) {
+      if (sec >= 3600) {
+        const h = Math.floor(sec / 3600),
+          m = Math.floor((sec % 3600) / 60);
+        return `${h}h ${String(m).padStart(2, '0')}m`;
+      }
+      const m = Math.floor(sec / 60),
+        s = sec % 60;
+      return `${m}m ${String(s).padStart(2, '0')}s`;
+    }
+    const mins = fallbackMinutes || 60,
+      h = Math.floor(mins / 60),
+      m = mins % 60;
+    return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
+  }
+  function automation(root, status, currency = '') {
     if (!status) return;
     const notice = root.querySelector('.auto-notice'),
-      footer = root.querySelector('.river-footer');
+      footer = root.querySelector('.river-footer'),
+      badge = root.querySelector('#auto-badge'),
+      statusText = root.querySelector('.auto-status'),
+      autoTab = root.querySelector('#river-tab-auto'),
+      statRound = root.querySelector('#auto-stat-round'),
+      statLoss = root.querySelector('#auto-stat-loss'),
+      statRounds = root.querySelector('#auto-stat-rounds'),
+      statTime = root.querySelector('#auto-stat-time'),
+      stopped = !status.running && status.reason !== 'Manual mode';
+    if (badge) {
+      badge.textContent = status.running ? 'ACTIVE' : stopped ? 'STOPPED' : 'READY';
+      badge.className = 'auto-badge ' + (status.running ? 'active' : stopped ? 'stopped' : 'ready');
+    }
+    if (statusText && status.reason) statusText.textContent = status.reason;
+    if (autoTab) autoTab.classList.toggle('running', !!status.running);
+    const sym = currency || '';
+    if (statRound) statRound.textContent = `${sym}${((status.roundSpent || 0) / 100).toFixed(2)}`;
+    if (statLoss) statLoss.textContent = `${sym}${((status.loss || 0) / 100).toFixed(2)}`;
+    if (statRounds) {
+      const cap = status.maxRounds || Number(root.querySelector('#auto-rounds')?.value) || 50;
+      statRounds.textContent = `${status.rounds || 0} / ${cap}`;
+    }
+    if (statTime) {
+      const capMins = status.maxMinutes || Number(root.querySelector('#auto-minutes')?.value) || 60;
+      statTime.textContent = formatTimeLeft(status.running ? status.timeRemaining : 0, capMins);
+    }
     if (!notice || !footer) return;
-    const stopped = !status.running && status.reason !== 'Manual mode';
     notice.hidden = !stopped;
     notice.textContent = stopped ? 'Auto stopped: ' + status.reason : '';
     footer.querySelector('button').hidden = !status.running;
     footer.querySelector('span').textContent = status.running
-      ? 'Automatic run active'
+      ? `Auto active · Round ${status.rounds || 0}/${status.maxRounds || '—'}`
       : stopped
-        ? 'Auto stopped · restart in Settings'
+        ? 'Auto stopped · review in Auto tab'
         : 'Hold’em · analysis on your computer';
   }
   function mount(root) {
@@ -104,6 +144,7 @@
     const panes = {};
     for (const [id, name] of [
       ['table', 'Table'],
+      ...(auto ? [['auto', 'Auto']] : []),
       ['players', 'Players'],
       ['session', 'Session'],
       ['settings', 'Settings'],
@@ -133,7 +174,8 @@
         if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
           e.preventDefault();
           const buttons = [...tabs.children],
-            next = buttons[(buttons.indexOf(b) + (e.key === 'ArrowRight' ? 1 : 3)) % 4];
+            n = buttons.length,
+            next = buttons[(buttons.indexOf(b) + (e.key === 'ArrowRight' ? 1 : n - 1)) % n];
           next.click();
           next.focus();
         }
@@ -156,6 +198,14 @@
     surface.querySelector('.decision-numbers').before(hint);
     panes.table.append(cards, stats, surface, analysis);
     analysis.querySelector('summary').textContent = 'Why this move';
+    if (auto && panes.auto) {
+      title(
+        panes.auto,
+        'Automatic play',
+        'Bounded by round bet, total loss, rounds, and up to 3 hours.',
+      );
+      panes.auto.append(auto);
+    }
     title(panes.players, 'At your table', 'Patterns from visible play. Hidden cards stay unknown.');
     const section = (pane, text) => {
       const h = document.createElement('h4');
@@ -201,10 +251,6 @@
       if (area === 'local' && c.theme) showTheme(c.theme.newValue || 'system');
     });
     panes.settings.append(theme);
-    if (auto) {
-      section(panes.settings, 'Automatic play');
-      panes.settings.append(auto);
-    }
     const screen = document.createElement('p');
     screen.className = 'settings-note';
     screen.textContent =
@@ -217,7 +263,7 @@
     footer.className = 'river-footer';
     footer.innerHTML =
       '<span>Hold’em · analysis on your computer</span><button hidden>Stop auto</button>';
-    footer.querySelector('button').onclick = () => root.querySelector('#auto-stop').click();
+    footer.querySelector('button').onclick = () => root.querySelector('#auto-stop')?.click();
     bar.append(footer);
     const notice = document.createElement('p');
     notice.className = 'auto-notice';
@@ -235,7 +281,7 @@
           Date.now() - panel.at < 3500 &&
           !s.errors?.length;
         const current = fresh ? panel : null;
-        automation(root, s?.automation);
+        automation(root, s?.automation, s?.currency);
         const c = copy(decision, s);
         surface.querySelector('.decision-subtitle').textContent = decision ? c.title : '';
         if (decision) hint.textContent = c.body;

@@ -54,8 +54,16 @@ function sanitize(data, receivedAt = Date.now()) {
       ? {
           running: data.automation.running === true,
           reason: String(data.automation.reason || '').slice(0, 180),
-          count: Math.max(0, Math.min(1000, Number(data.automation.count) || 0)),
+          count: Math.max(0, Math.min(10000, Number(data.automation.count) || 0)),
           spent: Math.max(0, Math.min(1e9, Number(data.automation.spent) || 0)),
+          rounds: Math.max(0, Math.min(10000, Number(data.automation.rounds) || 0)),
+          maxRounds: Math.max(0, Math.min(10000, Number(data.automation.maxRounds) || 0)),
+          roundSpent: Math.max(0, Math.min(1e9, Number(data.automation.roundSpent) || 0)),
+          maxBetPerRound: Math.max(0, Math.min(1e9, Number(data.automation.maxBetPerRound) || 0)),
+          loss: Math.max(0, Math.min(1e9, Number(data.automation.loss) || 0)),
+          maxLoss: Math.max(0, Math.min(1e9, Number(data.automation.maxLoss) || 0)),
+          timeRemaining: Math.max(0, Math.min(10800, Number(data.automation.timeRemaining) || 0)),
+          maxMinutes: Math.max(0, Math.min(180, Number(data.automation.maxMinutes) || 0)),
         }
       : undefined,
     source: data.source,

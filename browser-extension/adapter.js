@@ -255,7 +255,7 @@
         : null;
       if (betNode) {
         const value = text(betNode);
-        snapshot.heroBet = value ? (money(value)?.value ?? null) : 0;
+        snapshot.heroBet = value ? (money(value)?.value ?? 0) : 0;
       }
       snapshot.actions = [...new Set(snapshot.actions)];
       snapshot.heroTurn =

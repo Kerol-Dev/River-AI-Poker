@@ -408,4 +408,66 @@ describe('automatic pauses and stop explanations', () => {
     assert.equal(f.controller.status().reason, reason);
     assert.equal(f.clicks.length, 0);
   });
+  it('enforces max bet per round across streets, resets on the next round, and caps rounds and 3-hour duration', () => {
+    const f = autoFixture();
+    assert.throws(() => f.controller.start({ perRound: 1, maxLoss: 5, rounds: 2, minutes: 181 }));
+    f.controller.start({ perRound: 0.03, maxLoss: 5, rounds: 1, minutes: 180 });
+    assert.equal(f.controller.status().maxMinutes, 180);
+    assert.equal(f.controller.status().timeRemaining, 10800);
+    // Street 1 of hand 100: call €0.02 -> roundSpent = 2 cents, rounds = 1
+    f.tick('Call');
+    f.advance(900);
+    f.tick('Call');
+    assert.equal(f.clicks.length, 1);
+    assert.equal(f.controller.status().roundSpent, 2);
+    assert.equal(f.controller.status().rounds, 1);
+    assert.equal(f.controller.status().running, true);
+    // Street 2 of hand 100: another €0.02 call would push roundSpent to 4c (> 3c perRound cap)
+    f.s = { ...f.s, board: ['2c', '3d', '4h'] };
+    f.tick('Call');
+    assert.equal(f.controller.status().running, false);
+    assert.match(f.controller.status().reason, /Max bet per round/);
+  });
+  it('allows multi-street play within a round, resets round bet on a new hand, and stops when max rounds or net loss is reached', () => {
+    const f = autoFixture();
+    f.controller.start({ perRound: 0.05, maxLoss: 0.5, rounds: 1, minutes: 180 });
+    // Preflop call €0.02 in hand 100
+    f.tick('Call');
+    f.advance(900);
+    f.tick('Call');
+    assert.equal(f.controller.status().rounds, 1);
+    assert.equal(f.controller.status().roundSpent, 2);
+    // Flop call €0.02 in same hand 100 -> allowed because still in round 1 and 4c <= 5c perRound
+    f.s = { ...f.s, board: ['2c', '3d', '4h'] };
+    f.tick('Call');
+    f.advance(900);
+    f.tick('Call');
+    assert.equal(f.clicks.length, 2);
+    assert.equal(f.controller.status().rounds, 1);
+    assert.equal(f.controller.status().roundSpent, 4);
+    assert.equal(f.controller.status().running, true);
+    // Hand 101 begins -> roundSpent resets to 0 and Auto stops because rounds (1) >= maxRounds (1)
+    f.s = { ...f.s, handId: '101', board: [] };
+    f.tick('Call');
+    assert.equal(f.controller.status().roundSpent, 0);
+    assert.equal(f.controller.status().running, false);
+    assert.match(f.controller.status().reason, /Max rounds reached/);
+
+    // Net stack drawdown test for maxLoss
+    const g = autoFixture();
+    g.controller.start({ perRound: 2, maxLoss: 0.5, rounds: 10, minutes: 60 });
+    // Hero started with 9.98 + 0.02 heroBet = 10.00 balance. Drop Hero stack to 9.52 (48c loss so far)
+    g.s = {
+      ...g.s,
+      handId: '200',
+      heroBet: 0,
+      call: 0.05,
+      seats: g.s.seats.map((p: any) => (p.hero ? { ...p, stack: 9.52, bet: 0 } : p)),
+    };
+    // Calling 0.05 would bring total net loss to 0.48 + 0.05 = 0.53 > 0.50 maxLoss
+    g.tick('Call');
+    assert.equal(g.clicks.length, 0);
+    assert.equal(g.controller.status().running, false);
+    assert.match(g.controller.status().reason, /Max loss limit reached/);
+  });
 });

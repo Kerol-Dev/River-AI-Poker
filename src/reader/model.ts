@@ -17,7 +17,20 @@ export type ReaderSnapshot = {
   version: 1;
   key: string;
   source: string;
-  automation?: { running: boolean; reason: string; count: number; spent: number };
+  automation?: {
+    running: boolean;
+    reason: string;
+    count: number;
+    spent: number;
+    rounds?: number;
+    maxRounds?: number;
+    roundSpent?: number;
+    maxBetPerRound?: number;
+    loss?: number;
+    maxLoss?: number;
+    timeRemaining?: number;
+    maxMinutes?: number;
+  };
   handId: string;
   actorSeat?: string | null;
   timeLeft?: number | null;

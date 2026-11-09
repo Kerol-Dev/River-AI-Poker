@@ -92,7 +92,7 @@ describe('actual amount-entry path on synthetic tables', () => {
     it(
       clamp === Infinity
         ? 'submits one raise only after the committed button echoes the target'
-        : 'does not submit a clamped or unconfirmed target',
+        : 'submits at the clamped table amount after timeout if within limits',
       () => {
         const f = editor('text', clamp);
         let now = 10000,
@@ -144,10 +144,12 @@ describe('actual amount-entry path on synthetic tables', () => {
           assert.equal(clicks, 1);
         } else {
           assert.equal(clicks, 0);
-          now += 2200;
+          now += 1400;
           tick();
-          assert.equal(controller.status().running, false);
-          assert.match(controller.status().reason, /confirm the requested bet size/);
+          now += 1000;
+          tick();
+          assert.equal(clicks, 1);
+          assert.equal(controller.status().spent, 400);
         }
         assert.equal(f.submits(), 0);
         f.dom.window.close();
@@ -312,6 +314,154 @@ describe('actual amount-entry path on synthetic tables', () => {
       await new Promise((r) => setTimeout(r, 20));
     assert.equal(betBtn.textContent, 'Bet €2');
     assert.equal(input.value, '€2');
+    dom.window.close();
+  });
+  it('falls back to the confirmed table raise amount instead of stopping when timeoutFallback is true', () => {
+    const f = editor('text', 4.5);
+    let now = 10000,
+      clicks = 0;
+    const read = () => ({
+      handId: 'fake-fallback-1',
+      currency: '€',
+      heroTurn: true,
+      hole: ['As', '9h'],
+      board: [],
+      pot: 1.5,
+      call: 0.5,
+      heroBet: 0.5,
+      actions: ['fold', 'call', 'raise'],
+      actionAmounts: { raise: 2.0 },
+      errors: [],
+      seats: [{ id: 'hero', hero: true, stack: 75, bet: 0.5, inHand: true }],
+      sizing: { editable: true, min: 2.0, max: 75.5 },
+    });
+    const controller = f.w.RiverAutoplay.create({
+      read,
+      now: () => now,
+      prepare: () => true, // simulates input entry that table does not echo
+      click: (action: string) => {
+        if (action === 'raise') clicks++;
+        return true;
+      },
+    });
+    const tick = () => {
+      const s = read();
+      controller.observe(s, {
+        key: f.w.RiverAutoplay.keyOf(s),
+        action: 'Raise',
+        target: 2.2, // requested target differs from table's confirmed 2.0
+        updatedAt: now,
+      });
+    };
+    controller.start({ perRound: 10, maxLoss: 50, rounds: 50, minutes: 60, timeoutFallback: true });
+    tick();
+    assert.equal(clicks, 0);
+    // After 3100ms, the table still shows 2.00. Since timeoutFallback is enabled,
+    // it falls back to confirmed €2.00 raise rather than killing Auto Mode!
+    now += 3100;
+    tick();
+    assert.equal(controller.status().running, true);
+    now += 900;
+    tick();
+    assert.equal(clicks, 1);
+    assert.equal(controller.status().spent, 150); // €2.00 - €0.50 heroBet = €1.50
+    assert.equal(controller.status().running, true);
+    f.dom.window.close();
+  });
+  it('detects and clicks matching preset buttons for preflop and postflop bets', () => {
+    const dom = new JSDOM(
+      `<div class="table-actions-wrapper"><div class="preset-buttons"><div class="preset-size">2.5 BB</div><div class="preset-size">3 BB</div><div class="preset-size">All-in</div></div><div class="betting-slider-wrapper"><input class="betting-input" type="text" value="€2"></div><div class="actions-area single-actions"><div class="base-button action-button">Fold</div><div class="base-button action-button">Call €0.50</div><div class="base-button action-button">Raise To €2</div></div></div>`,
+      { runScripts: 'outside-only', pretendToBeVisual: true },
+    );
+    const w = dom.window as any,
+      doc = w.document;
+    w.RiverReader = {
+      visible: (e: HTMLElement) => Boolean(e && e.isConnected && !e.hidden),
+      decisionKey: (s: unknown) => JSON.stringify(s),
+    };
+    for (const file of ['bet-sizing.js'])
+      w.eval(readFileSync(new URL('../browser-extension/' + file, import.meta.url), 'utf8'));
+
+    let presetClicked = '';
+    for (const el of doc.querySelectorAll('.preset-size')) {
+      el.addEventListener('click', () => {
+        presetClicked = el.textContent;
+      });
+    }
+
+    const s = {
+      sizing: { min: 2.0, max: 100 },
+      call: 0.5,
+      pot: 1.5,
+      heroBet: 0.5,
+    };
+    // Sizing 2.5 BB (2.5 * 1.0 = 2.50)
+    assert.equal(
+      w.RiverBetSizing.prepare(doc.querySelector('.table-actions-wrapper'), 2.5, s),
+      true,
+    );
+    assert.equal(presetClicked, '2.5 BB');
+
+    // Sizing 3 BB (3.0 * 1.0 = 3.00)
+    assert.equal(
+      w.RiverBetSizing.prepare(doc.querySelector('.table-actions-wrapper'), 3.0, s),
+      true,
+    );
+    assert.equal(presetClicked, '3 BB');
+
+    // Postflop table with 50% and 100% presets
+    const postDom = new JSDOM(
+      `<div class="table-actions-wrapper"><div class="preset-buttons"><div class="preset-size">50% of pot</div><div class="preset-size">100% of pot</div><div class="preset-size">All-in</div></div><div class="betting-slider-wrapper"><input class="betting-input" type="text" value="€1"></div><div class="actions-area single-actions"><div class="base-button action-button">Check</div><div class="base-button action-button">Bet €1</div></div></div>`,
+      { runScripts: 'outside-only', pretendToBeVisual: true },
+    );
+    const postW = postDom.window as any,
+      postDoc = postW.document;
+    postW.RiverReader = w.RiverReader;
+    postW.eval(
+      readFileSync(new URL('../browser-extension/bet-sizing.js', import.meta.url), 'utf8'),
+    );
+    let postClicked = '';
+    for (const el of postDoc.querySelectorAll('.preset-size')) {
+      el.addEventListener('click', () => {
+        postClicked = el.textContent;
+      });
+    }
+
+    const postS = {
+      sizing: { min: 1.0, max: 100 },
+      call: 0,
+      pot: 10,
+      heroBet: 0,
+    };
+    // 50% pot = 5.0
+    assert.equal(
+      postW.RiverBetSizing.prepare(postDoc.querySelector('.table-actions-wrapper'), 5.0, postS),
+      true,
+    );
+    assert.equal(postClicked, '50% of pot');
+
+    // 100% pot = 10.0
+    assert.equal(
+      postW.RiverBetSizing.prepare(postDoc.querySelector('.table-actions-wrapper'), 10.0, postS),
+      true,
+    );
+    assert.equal(postClicked, '100% of pot');
+
+    // 75% pot (7.5) snaps to 100% pot (closer to pot than 50% pot)
+    assert.equal(
+      postW.RiverBetSizing.prepare(postDoc.querySelector('.table-actions-wrapper'), 8.0, postS),
+      true,
+    );
+    assert.equal(postClicked, '100% of pot');
+
+    // Over-pot (12.0) snaps to 100% of pot
+    assert.equal(
+      postW.RiverBetSizing.prepare(postDoc.querySelector('.table-actions-wrapper'), 12.0, postS),
+      true,
+    );
+    assert.equal(postClicked, '100% of pot');
+
+    postDom.window.close();
     dom.window.close();
   });
 });

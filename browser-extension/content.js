@@ -6,7 +6,7 @@
   host.style.cssText = 'position:fixed;inset:0;z-index:2147483646;pointer-events:none;';
   const shadow = host.attachShadow({ mode: 'closed' });
   shadow.innerHTML = `<style>${globalThis.RiverTheme?.css || ''}
-  </style><div id="markers"></div><section class="bar"><div class="header"><span class="brand"><b>♠</b> RIVER</span><span class="mode">READER 1.6.1</span><button id="live">Live off</button><button id="minimize" aria-label="Collapse River toolbar">−</button></div><div class="tools"><button id="map">Map table</button><button id="reset" title="Place markers on what River detected">Auto-map</button></div><div class="hint">Pair this connector with River, then enable reading.</div><div class="advice"><span class="action">Waiting</span><span class="equity">—</span></div><details class="auto-panel"><summary>Automatic play · user controlled</summary><div class="auto-fields"><label>Max / action<input id="auto-cap" type="number" min="0.01" max="1000" step="0.01" value="1000"></label><label>Spend limit<input id="auto-budget" type="number" min="0.01" step="0.01" placeholder="0.00"></label><label>Max actions<input id="auto-count" type="number" min="1" max="1000" value="1000"></label></div><div class="tiny">Amounts use the table currency. Exact bet sizes are confirmed before submission. Press Escape to stop.</div><div class="auto-options"><label>Run duration <select id="auto-minutes"><option value="10">10 min</option><option value="30">30 min</option><option value="60" selected>1 hour</option><option value="120">2 hours</option></select></label><label><input type="checkbox" id="auto-fallback" checked> Check/fold at 3 seconds if analysis is late</label><label><input type="checkbox" id="auto-bluffs"> Allow evidence-based bluff candidates</label></div><div class="auto-buttons"><button id="auto-start">START AUTO</button><button id="auto-stop">STOP</button></div><div class="auto-status">Manual mode · no automatic clicks</div></details></section>`;
+  </style><div id="markers"></div><section class="bar"><div class="header"><span class="brand"><b>♠</b> RIVER</span><span class="mode">READER 1.6.1</span><button id="live">Live off</button><button id="minimize" aria-label="Collapse River toolbar">−</button></div><div class="tools"><button id="map">Map table</button><button id="reset" title="Place markers on what River detected">Auto-map</button></div><div class="hint">Pair this connector with River, then enable reading.</div><div class="advice"><span class="action">Waiting</span><span class="equity">—</span><button id="auto-confirm-btn" type="button" hidden>CONFIRM BET</button></div><div class="auto-panel"><div class="auto-hero"><div class="auto-hero-top"><span class="auto-badge" id="auto-badge">READY</span><span class="auto-esc">Esc stops</span></div><div class="auto-status">Manual mode · set limits below and press Start</div><div class="auto-live-grid"><div><span>Round bet</span><strong id="auto-stat-round">0.00</strong></div><div><span>Net loss</span><strong id="auto-stat-loss">0.00</strong></div><div><span>Rounds</span><strong id="auto-stat-rounds">0 / 50</strong></div><div><span>Time left</span><strong id="auto-stat-time">1h 00m</strong></div></div></div><div class="auto-buttons"><button id="auto-start" type="button">START AUTO</button><button id="auto-stop" type="button">STOP</button></div><div class="auto-presets" role="group" aria-label="Auto presets"><button type="button" data-preset="cautious">Cautious</button><button type="button" data-preset="standard">Standard</button><button type="button" data-preset="deep">Deep · 3h</button></div><div class="auto-fields"><label><span>Max bet / round</span><input id="auto-round-bet" type="number" min="0.01" max="10000" step="0.5" value="15"></label><label><span>Max loss total</span><input id="auto-max-loss" type="number" min="0.01" max="100000" step="1" value="50"></label><label><span>Max rounds</span><input id="auto-rounds" type="number" min="1" max="10000" step="1" value="50"></label><label><span>Max time</span><select id="auto-minutes"><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>1 hour</option><option value="90">1.5 hours</option><option value="120">2 hours</option><option value="150">2.5 hours</option><option value="180">3 hours (max)</option></select></label></div><div class="auto-options"><label><input type="checkbox" id="auto-confirm-bets" checked> Confirm bet & raise wagers before sending</label><label><input type="checkbox" id="auto-fallback" checked> Check/fold at 3s if analysis is late</label><label><input type="checkbox" id="auto-bluffs"> Allow evidence-based bluff candidates</label></div><div class="tiny">Amounts use the table currency. Exact bet sizes are confirmed before submission.</div></div></section>`;
   document.documentElement.append(host);
   // Theme: 'system' follows macOS; the choice is shared with the popup.
   let themeMode = 'system';
@@ -48,18 +48,24 @@
     ? null
     : globalThis.RiverAutoplay?.create({
         read: currentSnapshot,
-        prepare: (target) => {
+        prepare: (target, s) => {
           const root =
             R.resolve(document, mapping.find((m) => m.id === 'actions')?.selector) ||
             R.table(document)?.closest('.table');
-          return globalThis.RiverBetSizing?.prepare(root, target) ?? false;
+          return globalThis.RiverBetSizing?.prepare(root, target, s) ?? false;
         },
         click: (kind, snapshot) => {
-          const root = R.resolve(document, mapping.find((m) => m.id === 'actions')?.selector);
-          const buttons = root
+          const actionsSelector = mapping.find((m) => m.id === 'actions')?.selector;
+          const root =
+            (actionsSelector ? R.resolve(document, actionsSelector) : null) ||
+            document.querySelector('.table-actions-wrapper') ||
+            document.querySelector('.actions-area') ||
+            R.table(document)?.closest('.table') ||
+            document;
+          const rawCandidates = root
             ? [
                 ...root.querySelectorAll(
-                  '.actions-area:not(.pre-actions) .base-button.action-button',
+                  '.actions-area:not(.pre-actions) .base-button.action-button, .actions-area:not(.pre-actions) .action-button, .actions-area:not(.pre-actions) .base-button, .action-button, button',
                 ),
               ].filter(
                 (b) =>
@@ -67,17 +73,21 @@
                   !b.classList.contains('disabled') &&
                   !b.hasAttribute('disabled') &&
                   b.getAttribute('aria-disabled') !== 'true' &&
+                  !b.closest('.preset-size, .betting-slider-wrapper, .pre-actions') &&
                   R.actionForButton(b, snapshot) === kind,
               )
             : [];
-          if (buttons.length !== 1 || !snapshot.heroTurn) return false;
-          const button = buttons[0],
+          const candidates = rawCandidates.filter(
+            (btn, i) => !rawCandidates.some((other, j) => i !== j && btn.contains(other)),
+          );
+          if (candidates.length === 0 || !snapshot.heroTurn) return false;
+          const button = candidates[0],
             rect = button.getBoundingClientRect(),
             opts = {
               bubbles: true,
               cancelable: true,
-              clientX: rect.x + rect.width / 2,
-              clientY: rect.y + rect.height / 2,
+              clientX: rect.x + (rect.width || 0) / 2,
+              clientY: rect.y + (rect.height || 0) / 2,
               button: 0,
             };
           button.dispatchEvent(
@@ -102,15 +112,106 @@
           return true;
         },
         changed: (status) => {
-          shadow.querySelector('.auto-status').textContent =
-            `${status.running ? 'AUTO ON · ' : ''}${status.reason} · ${status.count} actions · ${(status.spent / 100).toFixed(2)} spent`;
+          shadow.querySelector('.auto-status').textContent = status.reason;
           globalThis.RiverInterface?.automation(shadow, status);
           bar.classList.toggle('auto-active', status.running);
           bar.classList.toggle('auto-stopped', !status.running && status.count > 0);
           shadow.querySelector('#auto-start').disabled = status.running;
+          const confirmBtn = shadow.querySelector('#auto-confirm-btn');
+          if (confirmBtn) {
+            confirmBtn.hidden = !status.awaitingConfirm;
+            if (status.awaitingConfirm) {
+              const act = (status.awaitingConfirm.action || 'bet').toUpperCase();
+              const curr = status.currency || '€';
+              const tgt = Number(status.awaitingConfirm.target || 0).toFixed(2);
+              confirmBtn.textContent = `CONFIRM ${act} ${curr}${tgt}`;
+            }
+          }
         },
       });
   if (!auto) shadow.querySelector('.auto-panel').remove();
+  shadow.querySelector('#auto-confirm-btn')?.addEventListener('click', () => {
+    auto?.confirm();
+  });
+  const autoSettingsKey = 'river.auto.settings';
+  const syncIdleAutoPreview = () => {
+    if (!auto || auto.status().running) return;
+    const rounds = Number(shadow.querySelector('#auto-rounds')?.value) || 50,
+      minutes = Number(shadow.querySelector('#auto-minutes')?.value) || 60,
+      hrs = Math.floor(minutes / 60),
+      mins = minutes % 60;
+    const statRounds = shadow.querySelector('#auto-stat-rounds'),
+      statTime = shadow.querySelector('#auto-stat-time');
+    if (statRounds) statRounds.textContent = `0 / ${rounds}`;
+    if (statTime)
+      statTime.textContent = hrs ? `${hrs}h ${String(mins).padStart(2, '0')}m` : `${mins}m`;
+  };
+  const saveAutoSettings = () => {
+    if (!auto) return;
+    syncIdleAutoPreview();
+    chrome.storage?.local
+      ?.set?.({
+        [autoSettingsKey]: {
+          perRound: Number(shadow.querySelector('#auto-round-bet').value),
+          maxLoss: Number(shadow.querySelector('#auto-max-loss').value),
+          rounds: Number(shadow.querySelector('#auto-rounds').value),
+          minutes: Number(shadow.querySelector('#auto-minutes').value),
+          confirmBets: shadow.querySelector('#auto-confirm-bets')?.checked ?? true,
+          timeoutFallback: shadow.querySelector('#auto-fallback').checked,
+          allowBluffs: shadow.querySelector('#auto-bluffs').checked,
+        },
+      })
+      .catch?.(() => {});
+  };
+  if (auto) {
+    Promise.resolve(chrome.storage?.local?.get?.(autoSettingsKey))
+      .then((v) => {
+        const s = v?.[autoSettingsKey];
+        if (!s) return;
+        if (Number.isFinite(s.perRound) && s.perRound > 0)
+          shadow.querySelector('#auto-round-bet').value = String(s.perRound);
+        if (Number.isFinite(s.maxLoss) && s.maxLoss > 0)
+          shadow.querySelector('#auto-max-loss').value = String(s.maxLoss);
+        if (Number.isInteger(s.rounds) && s.rounds >= 1)
+          shadow.querySelector('#auto-rounds').value = String(s.rounds);
+        if (Number.isFinite(s.minutes) && s.minutes >= 1 && s.minutes <= 180)
+          shadow.querySelector('#auto-minutes').value = String(s.minutes);
+        if (typeof s.confirmBets === 'boolean')
+          shadow.querySelector('#auto-confirm-bets').checked = s.confirmBets;
+        if (typeof s.timeoutFallback === 'boolean')
+          shadow.querySelector('#auto-fallback').checked = s.timeoutFallback;
+        if (typeof s.allowBluffs === 'boolean')
+          shadow.querySelector('#auto-bluffs').checked = s.allowBluffs;
+        syncIdleAutoPreview();
+      })
+      .catch(() => {});
+    for (const sel of [
+      '#auto-round-bet',
+      '#auto-max-loss',
+      '#auto-rounds',
+      '#auto-minutes',
+      '#auto-confirm-bets',
+      '#auto-fallback',
+      '#auto-bluffs',
+    ])
+      shadow.querySelector(sel)?.addEventListener('change', saveAutoSettings);
+    const presets = {
+      cautious: { perRound: 5, maxLoss: 20, rounds: 25, minutes: 30 },
+      standard: { perRound: 15, maxLoss: 50, rounds: 50, minutes: 60 },
+      deep: { perRound: 35, maxLoss: 120, rounds: 150, minutes: 180 },
+    };
+    shadow.querySelectorAll('.auto-presets button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const p = presets[btn.dataset.preset];
+        if (!p) return;
+        shadow.querySelector('#auto-round-bet').value = String(p.perRound);
+        shadow.querySelector('#auto-max-loss').value = String(p.maxLoss);
+        shadow.querySelector('#auto-rounds').value = String(p.rounds);
+        shadow.querySelector('#auto-minutes').value = String(p.minutes);
+        saveAutoSettings();
+      });
+    });
+  }
   const oppKey = 'river.opponents.' + location.origin;
   if (generic)
     chrome.storage.local
@@ -134,11 +235,13 @@
     try {
       if (!enabled || !paired || editing) throw Error('Enable Live and finish mapping first.');
       autoTable = R.table(document);
+      saveAutoSettings();
       auto.start({
-        perAction: Number(shadow.querySelector('#auto-cap').value),
-        budget: Number(shadow.querySelector('#auto-budget').value),
-        actions: Number(shadow.querySelector('#auto-count').value),
+        perRound: Number(shadow.querySelector('#auto-round-bet').value),
+        maxLoss: Number(shadow.querySelector('#auto-max-loss').value),
+        rounds: Number(shadow.querySelector('#auto-rounds').value),
         minutes: Number(shadow.querySelector('#auto-minutes').value),
+        confirmBets: shadow.querySelector('#auto-confirm-bets')?.checked ?? true,
         timeoutFallback: shadow.querySelector('#auto-fallback').checked,
         allowBluffs: shadow.querySelector('#auto-bluffs').checked,
       });
@@ -151,14 +254,20 @@
     'keydown',
     (e) => {
       if (e.key === 'Escape') auto?.stop('Stopped by Escape');
+      else if ((e.key === 'Enter' || e.key === ' ') && auto?.status()?.awaitingConfirm) {
+        e.preventDefault();
+        auto.confirm();
+      }
     },
     true,
   );
   document.addEventListener(
     'pointerdown',
     (e) => {
-      if (e.isTrusted && e.target.closest?.('.table-actions-wrapper'))
+      if (e.isTrusted && e.target.closest?.('.table-actions-wrapper')) {
+        if (auto?.status()?.awaitingConfirm) return; // Allow manual wager confirmation at the table
         auto?.stop('Manual table input detected');
+      }
     },
     true,
   );
@@ -390,7 +499,6 @@
   }
   function currentSnapshot() {
     const snapshot = R.read(document, mapping);
-    if (document.hidden) snapshot.errors.unshift('Poker tab is not visible. Advice paused.');
     if (editing || dragging) snapshot.errors.unshift('Finish mapping before using live advice.');
     return snapshot;
   }
@@ -553,11 +661,7 @@
     attributeFilter: ['class', 'style', 'disabled', 'aria-disabled'],
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      auto?.stop('Poker tab hidden');
-      stable = 0;
-      clear('Poker tab is not visible. Advice paused.');
-    }
+    if (!document.hidden) tick();
   });
   setInterval(() => {
     if (Date.now() - lastPacket > 3500) {

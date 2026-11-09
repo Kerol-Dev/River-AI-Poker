@@ -709,6 +709,8 @@ describe('always-visible compact win chance', () => {
     const ui = (dom.window as any).RiverInterface.mount(root),
       s = { key: 'hand-a', heroTurn: false, errors: [] },
       panel = { key: 'hand-a', at: Date.now(), win: 0.59, equity: 0.61, tie: 0.04 };
+    assert.ok(root.querySelector('#river-tab-auto'));
+    assert.ok(root.querySelector('#river-pane-auto .auto-panel'));
     ui.refresh(panel, s, null);
     assert.equal(root.querySelector('.action')!.textContent, '59%');
     assert.equal(root.querySelector('#read-equity')!.textContent, '61%');

@@ -25,6 +25,131 @@
       ? inputs[0]
       : null;
   }
+  function findPresetButton(root, target, s) {
+    const scope = actionScope(root);
+    if (!scope) return null;
+    const candidates = [
+      ...scope.querySelectorAll(
+        '.preset-size, .betclic-native-button, button, [role="button"], .base-button',
+      ),
+    ].filter((b) => {
+      if (!globalThis.RiverReader?.visible?.(b)) return false;
+      if (b.classList.contains('disabled') || b.hasAttribute('disabled')) return false;
+      if (b.classList.contains('action-button') || b.closest('.actions-area')) return false;
+      return true;
+    });
+    if (!candidates.length) return null;
+
+    let bb = null;
+    if (s?.sizing?.min != null && s.sizing.min > 0) {
+      bb = s.sizing.min / 2;
+    } else if (s?.call != null && s.call > 0) {
+      bb = s.call;
+    }
+
+    let pot50 = null,
+      pot100 = null;
+    if (s?.pot != null && s.pot > 0) {
+      const match = (s.heroBet || 0) + (s.call || 0);
+      const totalPot = s.pot + (s.call || 0);
+      pot50 = match + 0.5 * totalPot;
+      pot100 = match + 1.0 * totalPot;
+    }
+
+    for (const b of candidates) {
+      const txt = (b.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      if (/^2\.5\s*bb$/i.test(txt) && bb != null && Math.abs(target - 2.5 * bb) <= 0.15) {
+        return b;
+      }
+      if (/^3\s*bb$/i.test(txt) && bb != null && Math.abs(target - 3.0 * bb) <= 0.15) {
+        return b;
+      }
+      if (
+        /^50%\s*(?:of\s*pot|pot)?$/i.test(txt) &&
+        pot50 != null &&
+        Math.abs(target - pot50) <= 0.25
+      ) {
+        return b;
+      }
+      if (
+        /^(?:100%|pot)\s*(?:of\s*pot)?$/i.test(txt) &&
+        pot100 != null &&
+        Math.abs(target - pot100) <= 0.25
+      ) {
+        return b;
+      }
+      if (
+        /^all[\s-]*in$/i.test(txt) &&
+        s?.sizing?.max != null &&
+        Math.abs(target - s.sizing.max) <= 0.1
+      ) {
+        return b;
+      }
+    }
+
+    // Proximity matching: never let custom solver targets fall through to a tiny min-bet.
+    // Snap to the closest confirmed preset button.
+    if (pot50 != null || pot100 != null) {
+      const b50 = candidates.find((b) =>
+        /^50%\s*(?:of\s*pot|pot)?$/i.test((b.textContent || '').replace(/\s+/g, ' ').trim()),
+      );
+      const b100 = candidates.find((b) =>
+        /^(?:100%|pot)\s*(?:of\s*pot)?$/i.test((b.textContent || '').replace(/\s+/g, ' ').trim()),
+      );
+      if (b50 && b100) {
+        const diff50 = pot50 != null ? Math.abs(target - pot50) : Infinity;
+        const diff100 = pot100 != null ? Math.abs(target - pot100) : Infinity;
+        return diff50 <= diff100 ? b50 : b100;
+      }
+      if (b50 && pot50 != null && target <= pot50 * 1.4) return b50;
+      if (b100 && pot100 != null) return b100;
+      if (b50) return b50;
+    }
+
+    if (bb != null) {
+      const b25 = candidates.find((b) =>
+        /^2\.5\s*bb$/i.test((b.textContent || '').replace(/\s+/g, ' ').trim()),
+      );
+      const b30 = candidates.find((b) =>
+        /^3\s*bb$/i.test((b.textContent || '').replace(/\s+/g, ' ').trim()),
+      );
+      if (b25 && b30) {
+        return Math.abs(target - 2.5 * bb) <= Math.abs(target - 3.0 * bb) ? b25 : b30;
+      }
+      if (b25) return b25;
+      if (b30) return b30;
+    }
+
+    return null;
+  }
+  function clickPreset(button) {
+    const view = button.ownerDocument?.defaultView || globalThis;
+    const rect = button.getBoundingClientRect
+      ? button.getBoundingClientRect()
+      : { x: 0, y: 0, width: 0, height: 0 };
+    const opts = {
+      bubbles: true,
+      cancelable: true,
+      clientX: (rect.x || 0) + (rect.width || 0) / 2,
+      clientY: (rect.y || 0) + (rect.height || 0) / 2,
+      button: 0,
+    };
+    try {
+      if (typeof view.PointerEvent === 'function') {
+        button.dispatchEvent(
+          new view.PointerEvent('pointerdown', { ...opts, pointerType: 'mouse', buttons: 1 }),
+        );
+      }
+      button.dispatchEvent(new view.MouseEvent('mousedown', { ...opts, buttons: 1 }));
+      if (typeof view.PointerEvent === 'function') {
+        button.dispatchEvent(
+          new view.PointerEvent('pointerup', { ...opts, pointerType: 'mouse', buttons: 0 }),
+        );
+      }
+      button.dispatchEvent(new view.MouseEvent('mouseup', { ...opts, buttons: 0 }));
+    } catch {}
+    button.click();
+  }
   function buttonMatchesTarget(root, target) {
     const scope = actionScope(root);
     if (!scope) return false;
@@ -153,13 +278,18 @@
     }
     queueCycle(value, 240);
   }
-  function prepare(root, target) {
+  function prepare(root, target, s) {
     if (
       !Number.isFinite(target) ||
       target <= 0 ||
       Math.abs(target * 100 - Math.round(target * 100)) > 1e-6
     )
       return false;
+    const preset = findPresetButton(root, target, s);
+    if (preset) {
+      clickPreset(preset);
+      return true;
+    }
     const input = findInput(root);
     if (!input) return false;
     const view = input.ownerDocument.defaultView;
@@ -175,5 +305,5 @@
     }
     return true; // This means "entry attempted", not "the table accepted it".
   }
-  globalThis.RiverBetSizing = { findInput, prepare };
+  globalThis.RiverBetSizing = { findInput, findPresetButton, prepare };
 })();
