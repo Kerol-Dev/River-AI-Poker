@@ -1,5 +1,6 @@
 import type { PerformanceData } from '../components/Performance';
 import type { OpponentProfile, ObservedAction } from './opponents';
+import type { ManualSize } from './manual-sizing';
 export type ReaderPanel = {
   at: number;
   key: string | null;
@@ -15,6 +16,7 @@ export type ReaderPanel = {
   reasoning: string[];
   intent?: string;
   target?: number;
+  manualRaise?: ManualSize | null;
   status: string;
   storageError?: string;
 };

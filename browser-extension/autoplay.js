@@ -5,6 +5,10 @@
     JSON.stringify({
       ...s,
       key: undefined,
+      actionAmounts: undefined,
+      sizing: s?.sizing
+        ? { min: s.sizing.min, max: s.sizing.max, editable: s.sizing.editable }
+        : undefined,
       automation: undefined,
       timeLeft: undefined,
       actorSeat: undefined,

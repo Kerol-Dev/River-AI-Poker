@@ -7,6 +7,7 @@ export function decisionCopy(d: ReaderDecision | null, s: ReaderSnapshot | null)
     };
   const equity = Math.round(d.equity * 100),
     needed = Math.round(d.threshold * 100);
+  if (d.preflop) return { title: preflopTitle(d.action, d.preflop.spot), body: d.explanation };
   if (d.intent === 'bluff' || d.intent === 'semi-bluff')
     return {
       title:
@@ -22,8 +23,8 @@ export function decisionCopy(d: ReaderDecision | null, s: ReaderSnapshot | null)
     };
   if (d.action === 'Call')
     return {
-      title: s.allInCall ? 'Calling uses your remaining stack' : 'You have the equity to continue',
-      body: `About ${equity}% estimated equity against ${needed}% needed to call. Rake and future bets can change the result.`,
+      title: s.allInCall ? 'Calling uses your remaining stack' : 'Call clears the model’s price',
+      body: `About ${equity}% action-weighted equity against ${needed}% needed to call after accounting for bet pressure and remaining streets.`,
     };
   if (d.action === 'Check')
     return {
@@ -34,4 +35,19 @@ export function decisionCopy(d: ReaderDecision | null, s: ReaderSnapshot | null)
     title: 'Consider betting for value',
     body: 'Your hand compares well with the assumed ranges. The suggested size is a starting point, not a solved strategy.',
   };
+}
+
+// Preflop decisions come from starting-hand ranges, so their copy explains the spot.
+export function preflopTitle(action: string, spot: string) {
+  if (action === 'Raise' || action === 'Bet')
+    return spot === 'unopened'
+      ? 'Raise first in'
+      : spot === 'limped'
+        ? 'Raise the limpers'
+        : spot === 'raised'
+          ? 'Re-raise for value'
+          : 'Raise again';
+  if (action === 'Call') return spot === 'limped' ? 'Limp along cheaply' : 'Call and see the flop';
+  if (action === 'Check') return 'Check your option';
+  return 'Fold this hand';
 }

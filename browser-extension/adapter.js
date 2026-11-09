@@ -142,7 +142,6 @@
       opponents: s.opponents,
       heroTurn: s.heroTurn,
       actions: s.actions,
-      actionAmounts: s.actionAmounts,
       seats: s.seats.map((p) => ({
         id: p.id,
         hero: p.hero,
@@ -151,7 +150,9 @@
         bet: p.bet,
         inHand: p.inHand,
       })),
-      sizing: s.sizing,
+      sizing: s.sizing
+        ? { min: s.sizing.min, max: s.sizing.max, editable: s.sizing.editable }
+        : null,
       sittingOut: s.sittingOut,
       errors: s.errors,
       mapping: s.mapping,
@@ -254,7 +255,7 @@
         : null;
       if (betNode) {
         const value = text(betNode);
-        snapshot.heroBet = value ? (money(value)?.value ?? null) : visible(betNode) ? null : 0;
+        snapshot.heroBet = value ? (money(value)?.value ?? null) : 0;
       }
       snapshot.actions = [...new Set(snapshot.actions)];
       snapshot.heroTurn =
@@ -282,13 +283,7 @@
           ).length >= 2;
         const betElement = root.querySelector('.player-bet-' + id.split('-').at(-1));
         const betText = text(betElement),
-          bet = !betElement
-            ? null
-            : betText
-              ? (money(betText)?.value ?? null)
-              : visible(betElement)
-                ? null
-                : 0;
+          bet = !betElement ? null : betText ? (money(betText)?.value ?? null) : 0;
         const timer = text(seatEl.querySelector('.countdown-text'));
         if (/^\d{1,3}$/.test(timer)) {
           snapshot.actorSeat = id;
@@ -362,17 +357,36 @@
         sizeContext = context;
         sizeMinimum = null;
       }
+      if (snapshot.heroBet == null && snapshot.heroTurn) {
+        const oppBets = snapshot.seats
+          .filter((p) => !p.hero && p.inHand && p.bet != null)
+          .map((p) => p.bet);
+        if (
+          (snapshot.actions.includes('bet') && snapshot.call === 0) ||
+          (!snapshot.allInCall &&
+            snapshot.call != null &&
+            snapshot.call > 0 &&
+            oppBets.length > 0 &&
+            Math.round(Math.max(...oppBets) * 100) === Math.round(snapshot.call * 100))
+        )
+          snapshot.heroBet = 0;
+      }
+      const controlsRoot = actionsRoot?.closest('.table-actions-wrapper') || actionsRoot;
       const amount = snapshot.actionAmounts.raise ?? snapshot.actionAmounts.bet;
-      const thumb = actionsRoot?.querySelector('.betting-slider-thumb');
-      if (amount != null && visible(thumb) && Math.abs(parseFloat(thumb.style.left || 'NaN')) < 0.5)
-        sizeMinimum = amount;
+      const thumb = controlsRoot?.querySelector('.betting-slider-thumb');
+      if (amount != null) {
+        if (visible(thumb) && Math.abs(parseFloat(thumb.style.left || '0')) < 0.5)
+          sizeMinimum = amount;
+        else if (!visible(thumb) && sizeMinimum == null) sizeMinimum = amount;
+        else if (sizeMinimum != null && amount < sizeMinimum) sizeMinimum = amount;
+      }
       snapshot.sizing = {
         min: sizeMinimum,
         max:
           hero?.stack != null && snapshot.heroBet != null
             ? Math.round((hero.stack + snapshot.heroBet) * 100) / 100
             : null,
-        editable: visible(actionsRoot?.querySelector('input.betting-input')),
+        editable: visible(controlsRoot?.querySelector('input.betting-input')),
       };
       snapshot.sittingOut =
         /^Sit(?:ting)? out$/i.test(text(heroSeat?.querySelector('.nickname'))) ||

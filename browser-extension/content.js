@@ -5,11 +5,29 @@
   host.id = 'river-table-mapper';
   host.style.cssText = 'position:fixed;inset:0;z-index:2147483646;pointer-events:none;';
   const shadow = host.attachShadow({ mode: 'closed' });
-  shadow.innerHTML = `<style>
-  :host{font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;color:#f4ede0}*{box-sizing:border-box}button{cursor:pointer;font:inherit}.bar{pointer-events:auto;position:absolute;right:14px;top:12px;width:255px;padding:12px;border:1px solid #8a7b6c66;border-radius:11px;background:#1c1b1af5;box-shadow:0 7px 30px #0005;font-size:11px}.header{display:flex;align-items:center;justify-content:space-between;gap:8px}.brand{letter-spacing:2px;font-size:12px;font-weight:650}.brand b{color:#ff6b5b}.mode{color:#b9afa5;font-size:8px;letter-spacing:1px}.tools{display:flex;gap:5px;margin-top:10px}.tools button{background:#413e3a;color:#f4ede0;border:1px solid #5f5a54;border-radius:5px;padding:6px 9px;font-size:10px}.tools button.active{background:#ff6b5b;border-color:#ff6b5b;color:#1c1b1a}.hint{color:#beb6ad;font-size:10px;line-height:1.6;margin-top:10px}.advice{border-top:1px solid #56514c;margin-top:10px;padding-top:10px;display:flex;align-items:baseline;justify-content:space-between;gap:8px}.action{font-size:22px;color:#f4ede0}.equity{color:#ff9b8d;font-size:12px}.tiny{font-size:8px;color:#aca195;line-height:1.5;margin-top:7px}.marker{pointer-events:auto;position:absolute;border:2px solid #ff6b5b;background:#ff6b5b12;border-radius:6px;cursor:grab;touch-action:none;box-shadow:0 0 0 1px #1c1b1a99}.marker.player{border-color:#bcb3a9;background:#bcb3a90a}.marker.dealer{border-color:#f4ede0}.marker.unmapped{border-style:dashed;opacity:.7}.marker.dragging{cursor:grabbing;background:#ff6b5b30;z-index:4}.marker span{position:absolute;left:-2px;top:-22px;background:#ff6b5b;color:#1c1b1a;font-weight:600;font-size:9px;line-height:18px;padding:1px 7px;border-radius:4px 4px 0 0;white-space:nowrap}.marker.player span{background:#bcb3a9}.marker.dealer span{background:#f4ede0}.marker .size{position:absolute;right:-5px;bottom:-5px;width:10px;height:10px;border:1px solid #1c1b1a;border-radius:3px;background:#ff6b5b}.minimized{width:auto;padding:9px 12px}.minimized .tools,.minimized .hint,.minimized .advice,.minimized .tiny{display:none}.header button{border:0;background:none;color:#bab1a7;padding:1px 4px;font-size:13px}.bar .header{cursor:move;touch-action:none}.marker:focus-visible,button:focus-visible{outline:2px solid #f4ede0;outline-offset:3px}
-  .bar{width:300px;padding:16px;border-radius:16px;background:#1c1b1a;box-shadow:0 12px 40px #0005}.brand{font-weight:800;font-size:14px}.tools button{font-size:11px;font-weight:750;padding:9px}.action{font-size:34px;font-weight:850;letter-spacing:-1px}.equity{font-size:14px;font-weight:750}.hint{font-size:11px;line-height:1.5;min-height:34px}.advice{min-height:59px}.auto-panel{margin-top:12px;border-top:1px solid #56514c;padding-top:12px}.auto-panel summary{font-size:12px;font-weight:750;cursor:pointer}.auto-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:12px 0}.auto-fields label{font-size:9px;color:#c6bfb7;line-height:1.6}.auto-fields input{width:100%;padding:8px 4px;background:#3a3733;color:#f4ede0;border:1px solid #6c6660;border-radius:6px;font:700 12px -apple-system,sans-serif}.auto-buttons{display:flex;gap:8px}.auto-buttons button{flex:1;padding:10px;border-radius:7px;font-weight:850;border:1px solid #ff6b5b;background:#ff6b5b;color:#1c1b1a}.auto-buttons #auto-stop{background:#f4ede0;border-color:#f4ede0}.auto-status{font-size:11px;line-height:1.5;color:#f4ede0;margin-top:9px}.auto-active{border-color:#ff6b5b}.minimized .auto-panel{display:none}.minimized{width:auto}.auto-fields input:focus{outline:2px solid #ff6b5b}
-  </style><div id="markers"></div><section class="bar"><div class="header"><span class="brand"><b>♠</b> RIVER</span><span class="mode">READER 1.5.0</span><button id="minimize" aria-label="Collapse River toolbar">−</button></div><div class="tools"><button id="map">Map table</button><button id="live">Live off</button><button id="reset" title="Snap markers to detected table elements">Auto-map</button></div><div class="hint">Pair this connector with River, then enable reading.</div><div class="advice"><span class="action">Waiting</span><span class="equity">—</span></div><details class="auto-panel"><summary>Automatic play · user controlled</summary><div class="auto-fields"><label>Max / action<input id="auto-cap" type="number" min="0.01" max="1000" step="0.01" value="1000"></label><label>Spend limit<input id="auto-budget" type="number" min="0.01" step="0.01" placeholder="0.00"></label><label>Max actions<input id="auto-count" type="number" min="1" max="1000" value="1000"></label></div><div class="tiny">Amounts use the table currency. Exact bet sizes are confirmed before submission. Press Escape to stop.</div><div class="auto-options"><label>Run duration <select id="auto-minutes"><option value="10">10 min</option><option value="30">30 min</option><option value="60" selected>1 hour</option><option value="120">2 hours</option></select></label><label><input type="checkbox" id="auto-fallback" checked> Check/fold at 3 seconds if analysis is late</label><label><input type="checkbox" id="auto-bluffs"> Allow evidence-based bluff candidates</label></div><div class="auto-buttons"><button id="auto-start">START AUTO</button><button id="auto-stop">STOP</button></div><div class="auto-status">Manual mode · no automatic clicks</div></details><div class="tiny">Visible table only · calculations stay on this Mac</div></section>`;
+  shadow.innerHTML = `<style>${globalThis.RiverTheme?.css || ''}
+  </style><div id="markers"></div><section class="bar"><div class="header"><span class="brand"><b>♠</b> RIVER</span><span class="mode">READER 1.6.0</span><button id="live">Live off</button><button id="minimize" aria-label="Collapse River toolbar">−</button></div><div class="tools"><button id="map">Map table</button><button id="reset" title="Place markers on what River detected">Auto-map</button></div><div class="hint">Pair this connector with River, then enable reading.</div><div class="advice"><span class="action">Waiting</span><span class="equity">—</span></div><details class="auto-panel"><summary>Automatic play · user controlled</summary><div class="auto-fields"><label>Max / action<input id="auto-cap" type="number" min="0.01" max="1000" step="0.01" value="1000"></label><label>Spend limit<input id="auto-budget" type="number" min="0.01" step="0.01" placeholder="0.00"></label><label>Max actions<input id="auto-count" type="number" min="1" max="1000" value="1000"></label></div><div class="tiny">Amounts use the table currency. Exact bet sizes are confirmed before submission. Press Escape to stop.</div><div class="auto-options"><label>Run duration <select id="auto-minutes"><option value="10">10 min</option><option value="30">30 min</option><option value="60" selected>1 hour</option><option value="120">2 hours</option></select></label><label><input type="checkbox" id="auto-fallback" checked> Check/fold at 3 seconds if analysis is late</label><label><input type="checkbox" id="auto-bluffs"> Allow evidence-based bluff candidates</label></div><div class="auto-buttons"><button id="auto-start">START AUTO</button><button id="auto-stop">STOP</button></div><div class="auto-status">Manual mode · no automatic clicks</div></details></section>`;
   document.documentElement.append(host);
+  // Theme: 'system' follows macOS; the choice is shared with the popup.
+  let themeMode = 'system';
+  const applyTheme = () => globalThis.RiverTheme?.apply(host, themeMode);
+  Promise.resolve(chrome.storage?.local?.get?.('theme'))
+    .then((v) => {
+      themeMode = ['light', 'dark'].includes(v?.theme) ? v.theme : 'system';
+      applyTheme();
+    })
+    .catch(applyTheme);
+  globalThis.matchMedia?.('(prefers-color-scheme: light)').addEventListener?.('change', applyTheme);
+  chrome.storage?.onChanged?.addListener((changes, area) => {
+    if (area === 'local' && changes.theme) {
+      themeMode = changes.theme.newValue || 'system';
+      applyTheme();
+    }
+  });
+  const generic = !!R.generic;
+  if (generic) {
+    shadow.querySelector('.mode').textContent = 'AUTO-DETECT 1.6.0';
+  }
   const bar = shadow.querySelector('.bar'),
     markers = shadow.querySelector('#markers'),
     hint = shadow.querySelector('.hint'),
@@ -26,67 +44,92 @@
     lastDecision = null,
     destroyed = false,
     autoTable = null;
-  const auto = globalThis.RiverAutoplay?.create({
-    read: currentSnapshot,
-    prepare: (target) => {
-      const root = R.resolve(document, mapping.find((m) => m.id === 'actions')?.selector);
-      return globalThis.RiverBetSizing?.prepare(root, target) ?? false;
-    },
-    click: (kind, snapshot) => {
-      const root = R.resolve(document, mapping.find((m) => m.id === 'actions')?.selector);
-      const buttons = root
-        ? [
-            ...root.querySelectorAll('.actions-area:not(.pre-actions) .base-button.action-button'),
-          ].filter(
-            (b) =>
-              R.visible(b) &&
-              !b.classList.contains('disabled') &&
-              !b.hasAttribute('disabled') &&
-              b.getAttribute('aria-disabled') !== 'true' &&
-              R.actionForButton(b, snapshot) === kind,
-          )
-        : [];
-      if (buttons.length !== 1 || !snapshot.heroTurn) return false;
-      const button = buttons[0],
-        rect = button.getBoundingClientRect(),
-        opts = {
-          bubbles: true,
-          cancelable: true,
-          clientX: rect.x + rect.width / 2,
-          clientY: rect.y + rect.height / 2,
-          button: 0,
-        };
-      button.dispatchEvent(
-        new PointerEvent('pointerdown', {
-          ...opts,
-          pointerType: 'mouse',
-          isPrimary: true,
-          buttons: 1,
-        }),
-      );
-      button.dispatchEvent(new MouseEvent('mousedown', { ...opts, buttons: 1 }));
-      button.dispatchEvent(
-        new PointerEvent('pointerup', {
-          ...opts,
-          pointerType: 'mouse',
-          isPrimary: true,
-          buttons: 0,
-        }),
-      );
-      button.dispatchEvent(new MouseEvent('mouseup', { ...opts, buttons: 0 }));
-      button.click();
-      return true;
-    },
-    changed: (status) => {
-      shadow.querySelector('.auto-status').textContent =
-        `${status.running ? 'AUTO ON · ' : ''}${status.reason} · ${status.count} actions · ${(status.spent / 100).toFixed(2)} spent`;
-      globalThis.RiverInterface?.automation(shadow, status);
-      bar.classList.toggle('auto-active', status.running);
-      bar.classList.toggle('auto-stopped', !status.running && status.count > 0);
-      shadow.querySelector('#auto-start').disabled = status.running;
-    },
-  });
-  shadow.querySelector('#auto-start').onclick = (e) => {
+  const auto = generic
+    ? null
+    : globalThis.RiverAutoplay?.create({
+        read: currentSnapshot,
+        prepare: (target) => {
+          const root =
+            R.resolve(document, mapping.find((m) => m.id === 'actions')?.selector) ||
+            R.table(document)?.closest('.table');
+          return globalThis.RiverBetSizing?.prepare(root, target) ?? false;
+        },
+        click: (kind, snapshot) => {
+          const root = R.resolve(document, mapping.find((m) => m.id === 'actions')?.selector);
+          const buttons = root
+            ? [
+                ...root.querySelectorAll(
+                  '.actions-area:not(.pre-actions) .base-button.action-button',
+                ),
+              ].filter(
+                (b) =>
+                  R.visible(b) &&
+                  !b.classList.contains('disabled') &&
+                  !b.hasAttribute('disabled') &&
+                  b.getAttribute('aria-disabled') !== 'true' &&
+                  R.actionForButton(b, snapshot) === kind,
+              )
+            : [];
+          if (buttons.length !== 1 || !snapshot.heroTurn) return false;
+          const button = buttons[0],
+            rect = button.getBoundingClientRect(),
+            opts = {
+              bubbles: true,
+              cancelable: true,
+              clientX: rect.x + rect.width / 2,
+              clientY: rect.y + rect.height / 2,
+              button: 0,
+            };
+          button.dispatchEvent(
+            new PointerEvent('pointerdown', {
+              ...opts,
+              pointerType: 'mouse',
+              isPrimary: true,
+              buttons: 1,
+            }),
+          );
+          button.dispatchEvent(new MouseEvent('mousedown', { ...opts, buttons: 1 }));
+          button.dispatchEvent(
+            new PointerEvent('pointerup', {
+              ...opts,
+              pointerType: 'mouse',
+              isPrimary: true,
+              buttons: 0,
+            }),
+          );
+          button.dispatchEvent(new MouseEvent('mouseup', { ...opts, buttons: 0 }));
+          button.click();
+          return true;
+        },
+        changed: (status) => {
+          shadow.querySelector('.auto-status').textContent =
+            `${status.running ? 'AUTO ON · ' : ''}${status.reason} · ${status.count} actions · ${(status.spent / 100).toFixed(2)} spent`;
+          globalThis.RiverInterface?.automation(shadow, status);
+          bar.classList.toggle('auto-active', status.running);
+          bar.classList.toggle('auto-stopped', !status.running && status.count > 0);
+          shadow.querySelector('#auto-start').disabled = status.running;
+        },
+      });
+  if (!auto) shadow.querySelector('.auto-panel').remove();
+  const oppKey = 'river.opponents.' + location.origin;
+  if (generic)
+    chrome.storage.local
+      .get(oppKey)
+      .then((v) => {
+        const n = Number(v[oppKey]);
+        if (Number.isInteger(n) && n >= 1 && n <= 5) R.settings.opponents = n;
+      })
+      .catch(() => {});
+  // Used by the panel only when this site does not show opponents' hidden cards.
+  const stepOpponents = generic
+    ? (d) => {
+        R.settings.opponents = Math.max(1, Math.min(5, R.settings.opponents + d));
+        chrome.storage.local.set({ [oppKey]: R.settings.opponents }).catch(() => {});
+        stable = 0;
+        return R.settings.opponents;
+      }
+    : null;
+  shadow.querySelector('#auto-start')?.addEventListener('click', (e) => {
     if (!e.isTrusted || !auto) return;
     try {
       if (!enabled || !paired || editing) throw Error('Enable Live and finish mapping first.');
@@ -102,8 +145,8 @@
     } catch (error) {
       shadow.querySelector('.auto-status').textContent = error.message;
     }
-  };
-  shadow.querySelector('#auto-stop').onclick = () => auto?.stop('Stopped by you');
+  });
+  shadow.querySelector('#auto-stop')?.addEventListener('click', () => auto?.stop('Stopped by you'));
   document.addEventListener(
     'keydown',
     (e) => {
@@ -122,6 +165,7 @@
   addEventListener('pagehide', () => auto?.stop('Table closed'));
   const invoke = (message) => chrome.runtime.sendMessage(message);
   const compact = globalThis.RiverCompactPanel?.create(shadow, {
+    stepOpponents,
     reset: async () => {
       const r = await invoke({ type: 'reset-session' });
       if (!r.ok) throw Error(r.error);
@@ -225,14 +269,21 @@
       const target = R.resolve(document, marker.selector),
         box = R.visible(target)
           ? target.getBoundingClientRect()
-          : {
-              x: 25 + (index % 4) * 160,
-              y: 40 + Math.floor(index / 4) * 100,
-              width: 135,
-              height: 60,
-            };
+          : marker.box
+            ? {
+                x: marker.box.x * innerWidth,
+                y: marker.box.y * innerHeight,
+                width: marker.box.w * innerWidth,
+                height: marker.box.h * innerHeight,
+              }
+            : {
+                x: 25 + (index % 4) * 160,
+                y: 40 + Math.floor(index / 4) * 100,
+                width: 135,
+                height: 60,
+              };
       const node = document.createElement('div');
-      node.className = `marker ${marker.kind} ${target ? '' : 'unmapped'}`;
+      node.className = `marker ${marker.kind} ${target || marker.box ? '' : 'unmapped'}`;
       node.setAttribute('role', 'button');
       node.setAttribute('aria-label', `Move ${marker.label} marker`);
       node.tabIndex = 0;
@@ -272,6 +323,23 @@
           const b = node.getBoundingClientRect(),
             cx = b.x + b.width / 2,
             cy = b.y + b.height / 2;
+          if (generic) {
+            // Any site: pin the marker where it was dropped; detection reads inside it.
+            mapping[index] = {
+              ...marker,
+              selector: '',
+              box: {
+                x: b.x / innerWidth,
+                y: b.y / innerHeight,
+                w: b.width / innerWidth,
+                h: b.height / innerHeight,
+              },
+            };
+            clear(`${marker.label} pinned here. River reads this area first.`);
+            save();
+            renderMarkers();
+            return;
+          }
           const near = candidates(marker.kind)
             .map((c) => {
               const r = c.element.getBoundingClientRect();
@@ -336,6 +404,12 @@
       if (!mapping.length && root) {
         mapping = R.defaults(root);
         await save();
+      } else if (generic && root && !editing) {
+        const refined = R.refine?.(mapping);
+        if (refined) {
+          mapping = refined;
+          await save();
+        }
       }
       renderMarkers();
       if (!enabled || !paired) {
@@ -361,9 +435,10 @@
           snapshot.errors[0] ||
             (snapshot.heroTurn ? 'Reading your current decision…' : 'Waiting for your turn.'),
         );
+      const { detection, ...packet } = snapshot;
       const response = await invoke({
         type: 'snapshot',
-        snapshot: { ...snapshot, automation: auto?.status() },
+        snapshot: { ...packet, automation: auto?.status() },
       });
       if (response.stopAuto) auto?.stop('Stopped from River');
       const validDecision =
@@ -389,19 +464,38 @@
         Date.now() - response.decision.updatedAt < 3500
       ) {
         lastDecision = response.decision;
+        const panel = response.panel;
+        const manualRaise =
+          !snapshot.automation?.running &&
+          panel?.key === snapshot.key &&
+          Date.now() - panel.at >= 0 &&
+          Date.now() - panel.at < 3500
+            ? panel.manualRaise
+            : undefined;
+        const awaitingSize =
+          !snapshot.automation?.running &&
+          ['Bet', 'Raise'].includes(response.decision.action) &&
+          manualRaise === undefined;
+        const displayTarget = awaitingSize
+          ? null
+          : manualRaise
+            ? manualRaise.target
+            : response.decision.target;
         action.textContent =
           (snapshot.allInCall && response.decision.action === 'Call'
             ? 'Call all-in'
             : response.decision.action) +
-          (response.decision.target != null
-            ? ` to ${snapshot.currency}${response.decision.target.toFixed(2)}`
-            : response.decision.amount > 0
+          (displayTarget != null
+            ? ` to ${snapshot.currency}${displayTarget.toFixed(2)}`
+            : !awaitingSize && !manualRaise && response.decision.amount > 0
               ? ` ${snapshot.currency}${response.decision.amount.toFixed(2)}`
               : '');
         eq.textContent = `${(response.decision.equity * 100).toFixed(1)}% equity`;
         hint.textContent =
           globalThis.RiverInterface?.copy(response.decision, snapshot).body ||
           response.decision.explanation;
+        if (manualRaise?.note) hint.textContent += ` ${manualRaise.note}`;
+        if (awaitingSize) hint.textContent += ' Waiting for a confirmed size suggestion.';
       }
       auto?.observe(snapshot, response.ok ? response.decision : null);
     } catch {
@@ -431,7 +525,7 @@
     if (
       !mutations.some((m) => {
         const el = m.target.nodeType === 1 ? m.target : m.target.parentElement;
-        return el?.closest?.(critical);
+        return generic ? el && el !== host && !host.contains(el) : el?.closest?.(critical);
       })
     )
       return;

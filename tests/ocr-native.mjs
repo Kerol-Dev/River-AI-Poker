@@ -32,3 +32,33 @@ try {
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
+
+// Automatic card detection on generated tables: two-colour, four-colour serif with suits beside
+// ranks, and a small cream-faced window.
+{
+  const dir = mkdtempSync(path.join(tmpdir(), 'river-cards-test-'));
+  try {
+    const map = path.join(dir, 'map.json');
+    writeFileSync(map, JSON.stringify([{ id: 'scan', x: 0, y: 0, width: 1, height: 1 }]));
+    const expected = {
+      1: ['Js', 'Th', '7c', '2d', 'As', 'Kh'],
+      2: ['Js', 'Th', '7c', '2d', 'As', 'Kh'],
+      3: ['Js', 'Th', '7c', '2d', 'Qd', 'As', 'Kh'],
+    };
+    for (const style of [1, 2, 3]) {
+      const image = path.join(dir, `table-${style}.png`);
+      execFileSync('xcrun', ['swift', 'tests/cards-fixture.swift', image, String(style)]);
+      const result = JSON.parse(
+        execFileSync('native/bin/river-ocr', [image, map, '--cards'], { encoding: 'utf8' }),
+      );
+      assert.deepEqual(
+        result.cards.map((c) => c.rank + c.suit),
+        expected[style],
+        `card detection, style ${style}`,
+      );
+    }
+    console.log('PASS: native card detection on three generated table styles.');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}

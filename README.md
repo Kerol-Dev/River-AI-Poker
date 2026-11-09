@@ -50,6 +50,14 @@ The current browser adapter targets the observed Bet365 Hold’em web client. **
 
 _Screenshots use generated sample data. The OCR UI preview uses a mock source; the native recognition engine is separately exercised on generated image fixtures._
 
+## macOS and Windows
+
+River runs on macOS 12+ and Windows 10/11. Download the `.dmg` or the Windows setup `.exe` and the Chrome extension `.zip` from the [latest release](https://github.com/Kerol-Dev/river/releases/latest). Screen reading uses Apple Vision on macOS and the built-in Windows text recognition on Windows; card detection works the same on both.
+
+## Any site
+
+The Table companion runs on Bet365 automatically and on any other site you turn it on for from its toolbar button. It detects cards, the board, pot and buttons without a map. For tables drawn as one image, River's Screen reader finds cards by shape in Automatic mode. See the [companion guide](browser-extension/README.md).
+
 ## Get started
 
 ### Develop locally

@@ -55,8 +55,10 @@ export function rangeWeights(
     percentiles.set(sorted[i], (i + j) / (2 * sorted.length));
     i = j;
   }
+  const boardCat = board.length >= 3 ? evaluate(board).category : 0;
+  const boardRanks = new Set(board.map(rank));
   const tight = mode === 'cautious' || mode === 'continue';
-  const floor =
+  const baseFloor =
     mode === 'continue'
       ? 0.025
       : tight
@@ -66,12 +68,25 @@ export function rangeWeights(
           : action === 'bet'
             ? 0.2
             : 0.35;
+  const floor =
+    (action === 'bet' || action === 'raise') && !tight
+      ? baseFloor /
+        (1 + Math.min(1.5, Math.max(0, pressure - 0.35)) + (board.length === 5 ? 0.5 : 0))
+      : baseFloor;
   const power =
     (action === 'raise' ? 4 : action === 'bet' ? 3 : 2) +
     (tight ? 1 : 0) +
     Math.min(1.5, Math.max(0, pressure - 0.5));
   return combos.map((h, i) => {
-    const made = percentiles.get(scores[i])!;
+    let made = percentiles.get(scores[i])!;
+    if (board.length >= 3) {
+      const cat = evaluate([...h, ...board]).category;
+      const ownMade =
+        cat > boardCat ||
+        (cat > 0 &&
+          (rank(h[0]) === rank(h[1]) || boardRanks.has(rank(h[0])) || boardRanks.has(rank(h[1]))));
+      if (!ownMade) made *= 0.2;
+    }
     const draw = board.length ? drawStrength(h, board) : 0;
     return floor + (1 - floor) * Math.pow(Math.max(made, draw), power);
   });

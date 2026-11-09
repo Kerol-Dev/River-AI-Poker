@@ -75,8 +75,9 @@ export function StudyCoach({
         )}
         {review?.backdoorsOnly && (
           <p>
-            High card with backdoor possibilities only. A runner-runner draw is not a four-card
-            draw.
+            {input.board.length === 3
+              ? 'High card with backdoor possibilities only. A runner-runner draw is not a four-card draw.'
+              : 'High card with no one-card flush or straight draw.'}
           </p>
         )}
         {review?.breakEvenTie !== null && review?.breakEvenTie !== undefined && (

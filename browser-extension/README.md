@@ -1,8 +1,17 @@
-# River Table Companion 1.4
+# River Table Companion 1.6
 
-Load this folder through Chrome → Extensions → Manage extensions → Developer mode → Load unpacked. Pair with the code from River → Browser table → Connection. The supported frame is `https://update-com.p365play.com/html5/*`; the only network destination is the local River bridge on `127.0.0.1:17864`.
+Load this folder through Chrome → Extensions → Manage extensions → Developer mode → Load unpacked. Pair with the code from River → Browser table → Connection. The only network destination is the local River bridge on `127.0.0.1:17864`.
 
-After updating, reload this extension and refresh the poker tab between hands. Chrome’s extension manager must show **1.5.0**; the reader now has Table, Players, Session and Settings tabs. Restart River to load its new interface, then copy its new pairing code. Loading an extension does not update already-injected scripts.
+After updating, reload this extension and refresh the poker tab between hands. Chrome’s extension manager must show **1.6.0**. Restart River to load its new interface, then copy its new pairing code. Loading an extension does not update already-injected scripts.
+
+## Bet365 and any other site
+
+- **Bet365** (`https://update-com.p365play.com/html5/*`) runs automatically with its dedicated reader: seats, usernames, bets, timers, sizing and automatic play.
+- **Any other site:** open the table, click the River button and choose **Use River on this site**. Chrome asks once to allow that site and the frames inside it. River then starts on every visit until you turn it off in the same place.
+
+On other sites River detects the table without a map. It reads cards from visible text (`A♠`, `10 ♣`), labels (`Ace of spades`), image file names (`As.png`, `ace_of_spades.svg`, `h10.svg`) and card classes (`rank-q suit-hearts`). It groups your hand, the board and face-down opponent hands by position, finds the pot label and the live Fold/Check/Call/Bet/Raise buttons, and ignores advance-action checkboxes. **Auto-map** places markers on what it found; drag a marker to pin your hand, the board, pot or buttons if a layout confuses it. When opponents' cards are not shown, set **Opponents in hand** on the panel. Automatic play stays Bet365-only.
+
+Tables drawn as a single image (canvas) have no readable cards in the page. Use **Screen reader** in the River app for those: Automatic mode finds the cards by shape on your Mac.
 
 ## Manual and automatic modes
 
@@ -28,7 +37,7 @@ Card faces use vector suits and keep unchanged card nodes between readings. Esti
 
 A primary All In button is recognised as a call only when its amount equals the visible remaining stack and the opposing wager covers that stack. Heads-up pot odds exclude unmatched excess. Ambiguous amounts and unresolved multiway side pots pause with explicit reasons. All-in sizing presets are never treated as calls.
 
-For other apps and browser rooms, use **Screen reader** in the macOS app. It supports selected-window capture, draggable regions and local OCR. This extension remains scoped to its supported browser client; screen mode gives guidance only. See the [compatibility guide](../docs/compatibility.md).
+For other apps and canvas-drawn tables, use **Screen reader** in the macOS app. Automatic mode finds face-up cards by their white faces, reads each corner rank and classifies the suit by colour and shape; it reads the pot and live buttons from on-screen text. Manual maps remain available. Screen mode gives call/check/fold guidance only. See the [compatibility guide](../docs/compatibility.md).
 
 ## 1.4.1: amount entry and automatic-run status
 

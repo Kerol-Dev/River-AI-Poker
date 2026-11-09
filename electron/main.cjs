@@ -9,7 +9,25 @@ const {
   shell,
   desktopCapturer,
   systemPreferences,
+  nativeTheme,
+  nativeImage,
+  Tray,
 } = require('electron');
+const isMac = process.platform === 'darwin';
+const isWindows = process.platform === 'win32';
+// One River per computer: the browser connection uses a fixed local port.
+if (!app.requestSingleInstanceLock()) app.exit(0);
+app.on('second-instance', () => showMain());
+if (isWindows) app.setAppUserModelId('studio.river.holdem');
+let tray = null;
+const windowBackground = () => (nativeTheme.shouldUseDarkColors ? '#0f1215' : '#f3f5f8');
+const appIcon = () =>
+  nativeImage.createFromPath(
+    path.join(
+      app.isPackaged ? process.resourcesPath : path.resolve(__dirname, '../public'),
+      'icon-256.png',
+    ),
+  );
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { createReaderBridge } = require('./reader-bridge.cjs');
@@ -47,9 +65,20 @@ function createMain() {
     minWidth: 880,
     minHeight: 700,
     title: 'River · Hold’em Studio',
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 14 },
-    backgroundColor: '#1c1b1a',
+    backgroundColor: windowBackground(),
+    // macOS keeps the traffic lights inset; Windows 11 draws its own caption buttons over the
+    // app's top bar, coloured to match the theme.
+    ...(isMac
+      ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 18, y: 14 } }
+      : {
+          titleBarStyle: 'hidden',
+          titleBarOverlay: {
+            color: windowBackground(),
+            symbolColor: nativeTheme.shouldUseDarkColors ? '#e9eef3' : '#0f1720',
+            height: 48,
+          },
+          icon: appIcon(),
+        }),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
@@ -72,6 +101,35 @@ function createMain() {
     mainWindow = null;
   });
 }
+function showMain() {
+  if (!mainWindow) createMain();
+  else {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+}
+// Windows has no Dock: closing the window keeps River in the notification area, like macOS.
+function createTray() {
+  if (!isWindows || tray) return;
+  tray = new Tray(appIcon().resize({ width: 16, height: 16 }));
+  tray.setToolTip('River · Hold’em Studio');
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: 'Open River', click: showMain },
+      { label: 'Floating HUD', click: showHUD },
+      { type: 'separator' },
+      {
+        label: 'Quit River',
+        click: () => {
+          quitting = true;
+          app.quit();
+        },
+      },
+    ]),
+  );
+  tray.on('click', showMain);
+}
 function showHUD() {
   if (hudWindow && !hudWindow.isDestroyed()) {
     hudWindow.show();
@@ -87,8 +145,9 @@ function showHUD() {
     frame: false,
     resizable: true,
     alwaysOnTop: true,
-    backgroundColor: '#1c1b1a',
+    backgroundColor: windowBackground(),
     opacity: 0.98,
+    skipTaskbar: isWindows,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
@@ -110,6 +169,7 @@ app.whenReady().then(() => {
     desktopCapturer,
     systemPreferences,
     app,
+    nativeImage,
     ownWindowIds: () =>
       BrowserWindow.getAllWindows()
         .map((w) => w.getMediaSourceId())
@@ -227,18 +287,32 @@ app.whenReady().then(() => {
       hudWindow.setOpacity(Math.max(0.45, Math.min(1, value)));
   });
   const menu = [
-    {
-      label: 'River',
-      submenu: [
-        { role: 'about' },
-        { type: 'separator' },
-        { role: 'hide' },
-        { role: 'hideOthers' },
-        { role: 'unhide' },
-        { type: 'separator' },
-        { role: 'quit' },
-      ],
-    },
+    isMac
+      ? {
+          label: 'River',
+          submenu: [
+            { role: 'about' },
+            { type: 'separator' },
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            { type: 'separator' },
+            { role: 'quit' },
+          ],
+        }
+      : {
+          label: 'File',
+          submenu: [
+            {
+              label: 'Quit River',
+              accelerator: 'Ctrl+Q',
+              click: () => {
+                quitting = true;
+                app.quit();
+              },
+            },
+          ],
+        },
     {
       label: 'Edit',
       submenu: [
@@ -268,7 +342,7 @@ app.whenReady().then(() => {
         { role: 'togglefullscreen' },
       ],
     },
-    { role: 'windowMenu' },
+    ...(isMac ? [{ role: 'windowMenu' }] : []),
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(menu));
   app.setAboutPanelOptions({
@@ -277,13 +351,23 @@ app.whenReady().then(() => {
     copyright: 'Copyright 2026 kerol-dev and River contributors. Apache-2.0.',
   });
   createMain();
+  createTray();
+  // Keep the Windows caption buttons in step with light and dark mode.
+  nativeTheme.on('updated', () => {
+    if (isWindows && mainWindow)
+      mainWindow.setTitleBarOverlay({
+        color: windowBackground(),
+        symbolColor: nativeTheme.shouldUseDarkColors ? '#e9eef3' : '#0f1720',
+      });
+  });
   app.on('activate', () => {
     if (!mainWindow) createMain();
     else mainWindow.show();
   });
 });
+// River keeps running in the background (Dock on macOS, notification area on Windows).
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  if (!isMac && !isWindows) app.quit();
 });
 
 app.on('before-quit', () => {

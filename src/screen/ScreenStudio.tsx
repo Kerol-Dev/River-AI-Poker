@@ -12,7 +12,10 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
-import { useEquity } from '../hooks';
+import { readSaved, useEquity } from '../hooks';
+import { preflopPlan } from '../reader/preflop';
+import { deviceName, isWindows } from '../platform';
+import type { ReaderSnapshot } from '../reader/model';
 import { advice } from '../engine/equity';
 import { parseCard } from '../engine/cards';
 import { PlayingCard } from '../components/Card';
@@ -24,6 +27,7 @@ import {
   parseFrame,
   roles,
   suggestRegions,
+  autoRead,
 } from './recognition';
 import { isPreview } from '../devPreview';
 export type ScreenAPI = {
@@ -31,7 +35,7 @@ export type ScreenAPI = {
     sources: { id: string; name: string; kind: string }[];
     permission: string;
   }>;
-  capture: (input: { sourceId: string; regions: Region[] }) => Promise<Frame>;
+  capture: (input: { sourceId: string; regions: Region[]; auto?: boolean }) => Promise<Frame>;
   reset: () => Promise<void>;
 };
 export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => void }) {
@@ -50,7 +54,8 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
     [reading, setReading] = useState<ScreenReading | null>(null),
     [clock, setClock] = useState(Date.now()),
     [confirmed, setConfirmed] = useState(false),
-    [review, setReview] = useState(false);
+    [review, setReview] = useState(false),
+    [auto, setAuto] = useState(() => readSaved<boolean>('river.screen.auto', true) !== false);
   const [draft, setDraft] = useState<Region | null>(null),
     drag = useRef<{ x: number; y: number; id?: string; region?: Region } | null>(null),
     mapRef = useRef<HTMLDivElement>(null),
@@ -60,6 +65,13 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
     active = useRef(true),
     current = useRef({ source, regions, opponents, street });
   current.current = { source, regions, opponents, street };
+  // Automatic mode finds cards, pot and buttons in every frame, so no map needs confirming.
+  const mapReady = auto || confirmed;
+  useEffect(() => {
+    try {
+      localStorage.setItem('river.screen.auto', JSON.stringify(auto));
+    } catch {}
+  }, [auto]);
   useEffect(() => {
     active.current = true;
     const t = setInterval(() => setClock(Date.now()), 500);
@@ -84,13 +96,13 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
     !!reading &&
     !reading.issues.length &&
     clock - reading.at < 5000 &&
-    confirmed &&
+    mapReady &&
     stable.current.count >= 2;
   const equityValid =
     !!reading &&
     !reading.equityIssues.length &&
     clock - reading.at < 5000 &&
-    confirmed &&
+    mapReady &&
     cardStable.current.count >= 2;
   const eq = useEquity(
     equityValid
@@ -105,12 +117,31 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
   );
   const line =
     valid && eq.result ? advice(eq.result.equity, reading!.pot!, reading!.call!, opponents) : null;
-  const action = line
-    ? ['Raise', 'Bet'].includes(line.action)
+  // Preflop uses starting-hand ranges; the screen shows no seat actions, so any price
+  // to call is read as a raise.
+  const preflop =
+    line && reading!.board.length === 0
+      ? preflopPlan(
+          {
+            source: 'screen',
+            hole: reading!.hole,
+            board: [],
+            call: reading!.call,
+            pot: reading!.pot,
+            heroBet: null,
+            seats: [],
+          } as unknown as ReaderSnapshot,
+          eq.result!.equity,
+          line.threshold,
+        )
+      : null;
+  const chosen = preflop ? preflop.action : line?.action;
+  const action = chosen
+    ? ['Raise', 'Bet'].includes(chosen)
       ? reading!.call === 0
         ? 'Check'
         : 'Call'
-      : line.action
+      : chosen
     : null;
   // Screen mode gives a verified call/check/fold comparison. Sizing requires a client adapter.
   useEffect(() => {
@@ -132,22 +163,24 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
       threshold: line?.threshold,
       updatedAt: equityValid ? reading!.at : Date.now(),
       blocked: valid ? undefined : reading?.issues[0] || 'Confirm the mapping and start reading.',
-      explanation: action
-        ? `Based on the visible cards and ${opponents} opponent${opponents === 1 ? '' : 's'}. Review the screen before acting.`
-        : undefined,
+      explanation: preflop
+        ? preflop.explanation
+        : action
+          ? `Based on the visible cards and ${opponents} opponent${opponents === 1 ? '' : 's'}. Review the screen before acting.`
+          : undefined,
     });
   }, [reading, valid, equityValid, eq.result, action]);
   async function loadSources() {
     setBusy(true);
     try {
       if (!window.river?.screen)
-        throw Error('Open the River macOS app to select another app or browser window.');
+        throw Error('Open the River desktop app to select another app or browser window.');
       const result = await window.river.screen.sources();
       setSources(result.sources);
       setMessage(
         result.permission === 'denied'
           ? 'Allow River in macOS System Settings → Privacy & Security → Screen Recording, then reopen River.'
-          : 'Choose a single table window. Screen capture stays on your Mac.',
+          : `Choose a single table window. Screen capture stays on ${deviceName}.`,
       );
     } catch (e) {
       setMessage((e as Error).message);
@@ -162,11 +195,38 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
     try {
       const f = await window.river!.screen!.capture({
         sourceId: source,
-        regions: scan ? [] : regions,
+        regions: scan || auto ? [] : regions,
+        auto,
       });
       if (!active.current || ticket !== sequence.current) return;
       setFrame(f);
-      if (scan) {
+      if (auto) {
+        const { reading: r, regions: found } = autoRead(f, opponents);
+        setRegions(found);
+        if ([0, 3, 4, 5].includes(r.board.length)) setStreet(r.board.length);
+        stable.current = r.issues.length
+          ? { key: '', count: 0 }
+          : {
+              key: r.signature,
+              count: stable.current.key === r.signature ? stable.current.count + 1 : 1,
+            };
+        cardStable.current = r.equityIssues.length
+          ? { key: '', count: 0 }
+          : {
+              key: r.cardSignature,
+              count: cardStable.current.key === r.cardSignature ? cardStable.current.count + 1 : 1,
+            };
+        setReading(r);
+        setMessage(
+          !f.cards?.length
+            ? 'No face-up cards found yet. Keep the table visible and unobstructed.'
+            : r.issues.length
+              ? r.issues[0]
+              : stable.current.count < 2
+                ? 'Confirming this reading…'
+                : 'Reading confirmed.',
+        );
+      } else if (scan) {
         setRegions(suggestRegions(f));
         setConfirmed(false);
         setMessage('Suggested regions are a draft. Add anything missing, then confirm your map.');
@@ -208,7 +268,7 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
     if (!live || busy) return;
     const t = setTimeout(() => capture(), 900);
     return () => clearTimeout(t);
-  }, [live, busy, frame, source, regions, street, opponents]);
+  }, [live, busy, frame, source, regions, street, opponents, auto]);
   const point = (e: React.PointerEvent) => {
     const box = mapRef.current!.getBoundingClientRect();
     return {
@@ -217,7 +277,7 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
     };
   };
   function pointerDown(e: React.PointerEvent) {
-    if (!frame) return;
+    if (!frame || auto) return;
     invalidate();
     const p = point(e);
     const id = (e.target as HTMLElement).closest<HTMLElement>('[data-region]')?.dataset.region;
@@ -326,8 +386,8 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
           <span className="eyebrow">SCREEN READER · BETA</span>
           <h2>Your table, wherever you play.</h2>
           <p>
-            Choose a window, map the important areas, and review what River sees. All text
-            recognition happens on your Mac.
+            Choose a window and River finds your cards, the board, pot and buttons by itself. Switch
+            to a manual map for unusual layouts. All recognition happens on {deviceName}.
           </p>
         </div>
         <button className="primary" disabled={busy} onClick={loadSources}>
@@ -354,24 +414,50 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
             </option>
           ))}
         </select>
-        <button
-          className="secondary"
-          disabled={!source || busy}
-          onClick={() => {
-            invalidate();
-            void capture(true);
-          }}
-        >
-          <ScanLine size={16} />
-          Find regions
-        </button>
+        <div className="segmented" role="group" aria-label="Mapping mode">
+          {[
+            [true, 'Automatic'],
+            [false, 'Manual map'],
+          ].map(([value, label]) => (
+            <button
+              key={String(value)}
+              className={auto === value ? 'active' : ''}
+              aria-pressed={auto === value}
+              onClick={() => {
+                invalidate(!value);
+                setRegions([]);
+                setAuto(value as boolean);
+                setMessage(
+                  value
+                    ? 'Automatic mode. Start reading; River finds the table in each frame.'
+                    : 'Manual map. Choose Find regions or draw them, then confirm.',
+                );
+              }}
+            >
+              {label as string}
+            </button>
+          ))}
+        </div>
+        {!auto && (
+          <button
+            className="secondary"
+            disabled={!source || busy}
+            onClick={() => {
+              invalidate();
+              void capture(true);
+            }}
+          >
+            <ScanLine size={16} />
+            Find regions
+          </button>
+        )}
         <button className="secondary" disabled={!source || busy} onClick={() => capture()}>
           <Square size={15} />
           Read once
         </button>
         <button
           className={live ? 'stop-auto' : 'primary'}
-          disabled={!source || !confirmed}
+          disabled={!source || !mapReady}
           onClick={() => {
             if (live) {
               invalidate(false);
@@ -383,7 +469,7 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
       </div>
       <div className="screen-layout">
         <section className="panel screen-map-panel">
-          <div className="screen-map-tools">
+          <div className="screen-map-tools" style={auto ? { display: 'none' } : undefined}>
             <label>
               Draw a region
               <select
@@ -452,7 +538,11 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
                 <Monitor size={38} />
                 <h3>Bring your table into view</h3>
                 <p>Select an app or browser window above, then choose Find regions.</p>
-                <small>macOS may ask for Screen Recording permission.</small>
+                <small>
+                  {isWindows
+                    ? 'Windows reads the window locally with its built-in text recognition.'
+                    : 'macOS may ask for Screen Recording permission.'}
+                </small>
               </div>
             )}
           </div>
@@ -461,6 +551,7 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
               <button
                 key={r.id}
                 className="region-chip"
+                disabled={auto}
                 onClick={() => {
                   invalidate();
                   setRegions((v) => v.filter((x) => x.id !== r.id));
@@ -470,7 +561,7 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
                 <Trash2 size={12} />
               </button>
             ))}
-            {regions.length > 0 && (
+            {regions.length > 0 && !auto && (
               <button
                 className="primary"
                 onClick={() => {
@@ -514,6 +605,8 @@ export function ScreenStudio({ trials, onHUD }: { trials: number; onHUD: () => v
               Street
               <select
                 value={street}
+                disabled={auto}
+                title={auto ? 'Detected from the board' : undefined}
                 onChange={(e) => {
                   invalidate(false);
                   setStreet(Number(e.target.value));

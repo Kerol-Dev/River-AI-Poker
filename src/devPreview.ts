@@ -59,25 +59,42 @@ export function installPreview() {
         permission: 'granted',
       }),
       reset: async () => {},
-      capture: async ({ sourceId, regions }: { sourceId: string; regions: Region[] }) => ({
+      capture: async ({
         sourceId,
-        at: Date.now(),
-        image: '/screen-demo.svg',
-        width: 1200,
-        height: 780,
-        readings: regions.length
-          ? regions.map((r) => ({
-              id: r.id,
-              words: screenWords.filter(
-                (w) =>
-                  w.x + w.width / 2 >= r.x &&
-                  w.x + w.width / 2 <= r.x + r.width &&
-                  w.y + w.height / 2 >= r.y &&
-                  w.y + w.height / 2 <= r.y + r.height,
-              ),
-            }))
-          : [{ id: 'scan', words: screenWords }],
-      }),
+        regions,
+        auto,
+      }: {
+        sourceId: string;
+        regions: Region[];
+        auto?: boolean;
+      }) =>
+        auto
+          ? {
+              // Recorded native card detection on a generated sample table.
+              ...(await (await fetch('/screen-demo-auto.json')).json()),
+              sourceId,
+              at: Date.now(),
+              image: '/screen-demo-auto.png',
+            }
+          : {
+              sourceId,
+              at: Date.now(),
+              image: '/screen-demo.svg',
+              width: 1200,
+              height: 780,
+              readings: regions.length
+                ? regions.map((r) => ({
+                    id: r.id,
+                    words: screenWords.filter(
+                      (w) =>
+                        w.x + w.width / 2 >= r.x &&
+                        w.x + w.width / 2 <= r.x + r.width &&
+                        w.y + w.height / 2 >= r.y &&
+                        w.y + w.height / 2 <= r.y + r.height,
+                    ),
+                  }))
+                : [{ id: 'scan', words: screenWords }],
+            },
     },
     showHUD: async () => {
       window.open('/?preview=1&hud=1', 'river-preview-hud', 'width=420,height=760');

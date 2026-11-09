@@ -27,6 +27,8 @@ import { Card, cardText } from './engine/cards';
 import { EquityResult, Range } from './engine/equity';
 import { act, Action, botAction, Game, legal, newHand } from './engine/game';
 import { readSaved, useEquity } from './hooks';
+import { savedTheme, setTheme, ThemeMode } from './theme';
+import { deviceName, isWindows, osName } from './platform';
 import { Coach, pct } from './components/Coach';
 import { PlayingCard } from './components/Card';
 import { defaultScenario, HandLab, Scenario } from './components/HandLab';
@@ -293,6 +295,7 @@ function Studio() {
     return [350, 1100, 1800].includes(n) ? n : 1100;
   });
   const [settings, setSettings] = useState(false);
+  const [theme, setThemeState] = useState<ThemeMode>(savedTheme);
   const reader = useBrowserReader(trials);
   const browserSession =
     reader.journal.journal.sessions.find((s) => s.id === reader.journal.journal.active) ||
@@ -444,19 +447,25 @@ function Studio() {
   }, [game, heroCall, range, heroEquity.result, hudSource]);
   useEffect(() => {
     if (hudSource !== 'browser' || page === 'screen') return;
-    const { snapshot, assessment, equity, now } = reader;
+    const { snapshot, assessment, equity, now, manualRaise } = reader;
     const data: HUDData = {
       source: 'browser',
-      sourceName: 'Browser reader',
+      sourceName: snapshot?.source?.startsWith('web:')
+        ? `Browser · ${snapshot.source.slice(4)}`
+        : 'Browser reader',
       action: reader.decision?.action,
       explanation: reader.decision
-        ? decisionCopy(reader.decision, reader.snapshot).body
+        ? [decisionCopy(reader.decision, reader.snapshot).body, manualRaise?.note]
+            .filter(Boolean)
+            .join(' ')
         : undefined,
       hole: reader.display.hole,
       board: reader.display.board,
       holding: reader.display.holding,
       autoRunning: snapshot?.automation?.running,
-      amount: reader.decision?.target ?? reader.decision?.amount,
+      amount: manualRaise
+        ? manualRaise.target
+        : (reader.decision?.target ?? reader.decision?.amount),
       amountLabel: reader.decision?.target !== undefined ? 'to' : undefined,
       currency: snapshot?.currency,
       threshold: reader.decision?.threshold,
@@ -484,6 +493,7 @@ function Studio() {
     reader.assessment,
     reader.equity.result,
     reader.decision,
+    reader.manualRaise,
     reader.display,
     reader.journal.journal,
   ]);
@@ -524,7 +534,7 @@ function Studio() {
     else {
       const popup = window.open(`${location.pathname}?hud=1`, 'river-hud', 'width=380,height=620');
       if (!popup) setToast('Allow this browser to open the HUD popup.');
-      else setToast('Browser HUD opened. The macOS app keeps it above other windows.');
+      else setToast('Browser HUD opened. River keeps it above other windows.');
     }
   };
   const navigate = (next: string) => {
@@ -591,11 +601,11 @@ function Studio() {
           </div>
           <button onClick={() => setSettings(true)}>
             <Settings2 size={17} />
-            Preferences<kbd>⌘</kbd>
+            Preferences<kbd>{isWindows ? 'Ctrl' : '⌘'}</kbd>
           </button>
           <div className="sidebar-version">
             <span className="dot green" />
-            River 1.5.0<span>macOS ready</span>
+            River 1.6.0<span>{osName} ready</span>
           </div>
         </div>
       </aside>
@@ -965,6 +975,27 @@ function Studio() {
                 <X size={19} />
               </button>
             </div>
+            <div className="setting-row">
+              <div>
+                <strong>Appearance</strong>
+                <p>System follows {deviceName}. The browser panel has its own switch.</p>
+              </div>
+              <div className="segmented" role="group" aria-label="Appearance">
+                {(['system', 'light', 'dark'] as ThemeMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    aria-pressed={theme === mode}
+                    className={theme === mode ? 'active' : ''}
+                    onClick={() => {
+                      setTheme(mode);
+                      setThemeState(mode);
+                    }}
+                  >
+                    {mode[0].toUpperCase() + mode.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
             <label className="setting-row">
               <div>
                 <strong>Analysis precision</strong>
@@ -1163,7 +1194,7 @@ function MiniChart({ records }: { records: Record[] }) {
           : 'No completed hands yet'
       }
     >
-      <path d="M0 62H240" stroke="#3A4C68" strokeDasharray="3 5" />
+      <path d="M0 62H240" style={{ stroke: 'var(--line-strong)' }} strokeDasharray="3 5" />
       <polyline
         fill="none"
         stroke="currentColor"

@@ -5,18 +5,35 @@ if (process.platform !== 'darwin') {
   process.exit(0);
 }
 mkdirSync('native/bin', { recursive: true });
+// Universal helper: one binary for Apple Silicon and Intel Macs.
+for (const arch of ['arm64', 'x86_64'])
+  execFileSync(
+    'xcrun',
+    [
+      'swiftc',
+      '-O',
+      '-target',
+      `${arch}-apple-macos12`,
+      'native/recognize.swift',
+      '-o',
+      `native/bin/river-ocr-${arch}`,
+      '-framework',
+      'Vision',
+      '-framework',
+      'ImageIO',
+      '-framework',
+      'CoreText',
+    ],
+    { stdio: 'inherit' },
+  );
 execFileSync(
-  'xcrun',
+  'lipo',
   [
-    'swiftc',
-    '-O',
-    'native/recognize.swift',
-    '-o',
+    '-create',
+    'native/bin/river-ocr-arm64',
+    'native/bin/river-ocr-x86_64',
+    '-output',
     'native/bin/river-ocr',
-    '-framework',
-    'Vision',
-    '-framework',
-    'ImageIO',
   ],
   { stdio: 'inherit' },
 );

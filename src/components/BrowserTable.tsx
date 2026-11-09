@@ -15,6 +15,8 @@ export function BrowserTable({ reader, onHUD }: { reader: BrowserReaderState; on
   const fresh = !!snapshot && now - snapshot.receivedAt < 3500;
   const automation = snapshot?.automation;
   const insight = decisionCopy(decision, snapshot);
+  const manualRaise = reader.manualRaise;
+  const amount = manualRaise ? manualRaise.target : (decision?.target ?? decision?.amount);
   const cards = (values: number[], count: number) =>
     Array.from({ length: count }, (_, i) => <PlayingCard key={i} card={values[i]} small />);
   return (
@@ -180,15 +182,19 @@ export function BrowserTable({ reader, onHUD }: { reader: BrowserReaderState; on
         </section>
         <BrowserDecision
           action={decision?.action}
-          amount={decision?.target ?? decision?.amount}
-          amountLabel={decision?.target !== undefined ? 'to' : undefined}
+          amount={amount}
+          amountLabel={decision?.target !== undefined && amount != null ? 'to' : undefined}
           currency={snapshot?.currency}
           equity={reader.equityAssessment.valid ? equity.result?.equity : undefined}
           win={reader.equityAssessment.valid ? equity.result?.win : undefined}
           tie={reader.equityAssessment.valid ? equity.result?.tie : undefined}
           threshold={decision?.threshold}
           pending={display.holding || (assessment.valid && equity.pending)}
-          reason={decision ? insight.body : assessment.reason || equity.error}
+          reason={
+            decision
+              ? [insight.body, manualRaise?.note].filter(Boolean).join(' ')
+              : assessment.reason || equity.error
+          }
         />
       </div>
       <div className="automation-summary panel">

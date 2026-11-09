@@ -1,11 +1,14 @@
 const http = require('node:http');
 const crypto = require('node:crypto');
 const SOURCE = 'update-com.p365play.com';
+// Bet365 uses its dedicated reader; other sites send "web:<hostname>" from the any-site reader.
+const validSource = (v) =>
+  v === SOURCE || (typeof v === 'string' && /^web:[a-z0-9.-]{1,253}$/i.test(v));
 function sanitize(data, receivedAt = Date.now()) {
   if (
     !data ||
     data.version !== 1 ||
-    data.source !== SOURCE ||
+    !validSource(data.source) ||
     typeof data.key !== 'string' ||
     data.key.length > 16000 ||
     typeof data.heroTurn !== 'boolean'
@@ -55,7 +58,7 @@ function sanitize(data, receivedAt = Date.now()) {
           spent: Math.max(0, Math.min(1e9, Number(data.automation.spent) || 0)),
         }
       : undefined,
-    source: SOURCE,
+    source: data.source,
     handId: String(data.handId || '').slice(0, 30),
     actorSeat: data.actorSeat == null ? null : String(data.actorSeat).slice(0, 40),
     timeLeft: data.timeLeft == null ? null : num(data.timeLeft),
@@ -243,4 +246,4 @@ function createReaderBridge({
     },
   };
 }
-module.exports = { createReaderBridge, sanitize };
+module.exports = { createReaderBridge, sanitize, validSource };

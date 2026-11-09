@@ -41,4 +41,20 @@ export const studyExamples = [
     call: 1,
     action: 'bet' as const,
   },
+  {
+    name: 'Board pair facing a turn bet',
+    hole: cards('Js 8d'),
+    board: cards('Kc 3c 3s 6h'),
+    pot: 7.47,
+    call: 2.97,
+    action: 'bet' as const,
+  },
+  {
+    name: 'Ace-high facing a turn bet',
+    hole: cards('Ah 5s'),
+    board: cards('Qh 2d Th 9d'),
+    pot: 15.18,
+    call: 5.44,
+    action: 'bet' as const,
+  },
 ];

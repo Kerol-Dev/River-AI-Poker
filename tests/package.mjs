@@ -5,7 +5,9 @@ import path from 'node:path';
 const data = await mkdtemp(path.join(tmpdir(), 'river-package-'));
 const app = await electron.launch({
   executablePath: path.resolve(
-    `release/River-darwin-${process.arch}/River.app/Contents/MacOS/River`,
+    process.platform === 'win32'
+      ? 'release/River-win32-x64/River.exe'
+      : `release/River-darwin-${process.arch}/River.app/Contents/MacOS/River`,
   ),
   args: [`--user-data-dir=${data}`],
 });
@@ -19,8 +21,11 @@ try {
     bg: getComputedStyle(document.documentElement).backgroundColor,
     accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
   }));
-  expect(palette.bg).toBe('rgb(28, 27, 26)');
-  expect(palette.accent.toUpperCase()).toBe('#FF6B5B');
+  // "Tide" palette: dark or light, following the system appearance.
+  expect([
+    ['rgb(15, 18, 21)', '#5AA9FF'],
+    ['rgb(243, 245, 248)', '#1D6FE0'],
+  ]).toContainEqual([palette.bg, palette.accent.toUpperCase()]);
   await page.getByRole('button', { name: 'Open HUD' }).click();
   const hud = app.windows().find((p) => p !== page) || (await app.waitForEvent('window'));
   await expect(hud.locator('.hud-source')).toContainText('LOCAL SIMULATOR');
@@ -40,7 +45,7 @@ try {
     animations: 'disabled',
   });
   console.log(
-    'PASS: standalone Apple Silicon app, bundled worker, requested palette, native HUD and hand lab.',
+    `PASS: standalone ${process.platform === 'win32' ? 'Windows' : process.arch} app, bundled worker, requested palette, native HUD and hand lab.`,
   );
 } finally {
   await app.close();

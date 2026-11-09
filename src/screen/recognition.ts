@@ -17,6 +17,22 @@ export type Word = {
   width: number;
   height: number;
 };
+// A face-up card found by the native helper: rank, suit and where its index was read.
+// `group` is the light card area it belongs to; g* is that area's box. All values are fractions.
+export type DetectedCard = {
+  rank: string;
+  suit: string;
+  confidence: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  group: number;
+  gx: number;
+  gy: number;
+  gw: number;
+  gh: number;
+};
 export type Frame = {
   at: number;
   sourceId: string;
@@ -24,6 +40,7 @@ export type Frame = {
   width: number;
   height: number;
   readings: { id: string; words: Word[] }[];
+  cards?: DetectedCard[];
 };
 export type ScreenReading = {
   hole: string[];
@@ -245,4 +262,187 @@ export function suggestRegions(frame: Frame): Region[] {
     }
   }
   return out;
+}
+
+type Area = { cards: DetectedCard[]; x: number; y: number; w: number; h: number };
+const areaBox = (cards: DetectedCard[]): Area => {
+  const x = Math.min(...cards.map((c) => c.gx)),
+    y = Math.min(...cards.map((c) => c.gy)),
+    r = Math.max(...cards.map((c) => c.gx + c.gw)),
+    b = Math.max(...cards.map((c) => c.gy + c.gh));
+  return { cards: [...cards].sort((a, b) => a.x - b.x), x, y, w: r - x, h: b - y };
+};
+// Card areas in one row with similar heights form a hand, the board or a shown hand.
+export function cardRows(cards: DetectedCard[], aspect = 1.6): Area[] {
+  const groups = [...new Set(cards.map((c) => c.group))].map((g) =>
+    areaBox(cards.filter((c) => c.group === g)),
+  );
+  const parent = groups.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  for (let i = 0; i < groups.length; i++)
+    for (let j = i + 1; j < groups.length; j++) {
+      const a = groups[i],
+        b = groups[j],
+        h = Math.max(a.h, b.h);
+      const gap = (Math.max(a.x, b.x) - Math.min(a.x + a.w, b.x + b.w)) * aspect;
+      if (Math.min(a.h, b.h) / h > 0.7 && Math.abs(a.y - b.y) < 0.35 * h && gap < 0.9 * h)
+        parent[find(i)] = find(j);
+    }
+  const rows = new Map<number, DetectedCard[]>();
+  groups.forEach((g, i) => rows.set(find(i), [...(rows.get(find(i)) || []), ...g.cards]));
+  return [...rows.values()].map(areaBox);
+}
+function lineOf(words: Word[], w: Word) {
+  return words
+    .filter(
+      (v) =>
+        Math.abs(v.y + v.height / 2 - (w.y + w.height / 2)) < Math.max(v.height, w.height) * 0.6,
+    )
+    .sort((a, b) => a.x - b.x);
+}
+const pad = (b: { x: number; y: number; w: number; h: number }, p = 0.01) => {
+  const x = Math.max(0, b.x - p),
+    y = Math.max(0, b.y - p);
+  return { x, y, width: Math.min(1 - x, b.w + 2 * p), height: Math.min(1 - y, b.h + 2 * p) };
+};
+// Automatic reading for any window: cards from shape detection, amounts and buttons from text.
+export function autoRead(
+  frame: Frame,
+  opponents: number,
+): { reading: ScreenReading; regions: Region[] } {
+  const words = frame.readings.flatMap((r) => r.words).filter((w) => w.confidence >= 0.5);
+  const cards = (frame.cards || []).filter((c) => c.confidence >= 0.55);
+  const rows = cardRows(cards, frame.width / Math.max(1, frame.height));
+  const center = { x: 0.5, y: 0.45 };
+  const dist = (a: Area) => Math.hypot(a.x + a.w / 2 - center.x, a.y + a.h / 2 - center.y);
+  const board = rows
+    .filter((r) => r.cards.length >= 3 && r.cards.length <= 5)
+    .sort((a, b) => dist(a) - dist(b))[0];
+  const issues: string[] = [],
+    equityIssues: string[] = [],
+    regions: Region[] = [];
+  const add = (role: Role, b: { x: number; y: number; w: number; h: number }) =>
+    regions.push({ id: role, role, label: roles.find((r) => r.role === role)!.label, ...pad(b) });
+  // Live buttons: the lowest line holding at least two action words.
+  const actionWords = words.filter((w) =>
+    /^(?:fold|check|call|raise|bet|all[ -]?in)\b/i.test(w.text.trim()),
+  );
+  const lines = actionWords
+    .map((w) => lineOf(actionWords, w))
+    .filter((l) => l.length >= 2)
+    .sort((a, b) => b[0].y - a[0].y);
+  const buttons = lines[0] || [];
+  const buttonsBox = buttons.length
+    ? (() => {
+        const x = Math.min(...buttons.map((w) => w.x)),
+          y = Math.min(...buttons.map((w) => w.y));
+        return {
+          x,
+          y,
+          w: Math.max(...buttons.map((w) => w.x + w.width)) - x,
+          h: Math.max(...buttons.map((w) => w.y + w.height)) - y,
+        };
+      })()
+    : null;
+  const heroChoices = rows.filter((r) => r !== board && r.cards.length === 2);
+  const heroScore = (r: Area) =>
+    r.y +
+    r.h * 2 -
+    (buttonsBox
+      ? Math.hypot(
+          r.x + r.w / 2 - (buttonsBox.x + buttonsBox.w / 2),
+          r.y + r.h / 2 - (buttonsBox.y + buttonsBox.h / 2),
+        ) / 2
+      : 0);
+  const hero = heroChoices.sort((a, b) => heroScore(b) - heroScore(a))[0];
+  const code = (c: DetectedCard) => c.rank + c.suit;
+  const hole = hero ? hero.cards.map(code) : [],
+    boardCards = board ? board.cards.map(code) : [];
+  if (hero) add('hole', hero);
+  if (board) add('board', board);
+  if (buttonsBox) add('actions', buttonsBox);
+  // Pot: a "Pot" label with its amount, or the amount just to its right.
+  const pots = words
+    .filter((w) => /\bpot\b/i.test(w.text))
+    .map((w) => {
+      const own = readMoney(w.text);
+      if (own != null) return { w, value: own, total: /total/i.test(w.text) };
+      const line = lineOf(words, w);
+      const next = line[line.indexOf(w) + 1];
+      const value = next && next.x - (w.x + w.width) < 0.08 ? readMoney(next.text) : null;
+      return { w, value, total: /total/i.test(w.text) };
+    })
+    .filter((p): p is { w: Word; value: number; total: boolean } => p.value != null);
+  const potChoice = (pots.some((p) => p.total) ? pots.filter((p) => p.total) : pots).sort(
+    (a, b) => b.value - a.value,
+  )[0];
+  const pot = potChoice?.value ?? null;
+  if (potChoice)
+    add('pot', { x: potChoice.w.x, y: potChoice.w.y, w: potChoice.w.width, h: potChoice.w.height });
+  const labels = buttons.map((w) => w.text.trim().toLowerCase());
+  const actions = ['fold', 'check', 'call', 'bet', 'raise'].filter((a) =>
+    labels.some((l) => l.startsWith(a)),
+  );
+  let call: number | null = null;
+  if (labels.some((l) => /^check\b/.test(l))) call = 0;
+  const callWord = buttons.find((w) => /^call\b/i.test(w.text.trim()));
+  if (callWord) {
+    call = readMoney(callWord.text);
+    if (call == null) {
+      const near = words.find(
+        (v) =>
+          v !== callWord &&
+          readMoney(v.text) != null &&
+          Math.abs(v.x + v.width / 2 - (callWord.x + callWord.width / 2)) < 0.06 &&
+          v.y > callWord.y - 0.01 &&
+          v.y - (callWord.y + callWord.height) < 0.05,
+      );
+      call = near ? readMoney(near.text) : null;
+    }
+  }
+  if (hole.length !== 2) issues.push('Your two cards are not visible yet.');
+  if (![0, 3, 4, 5].includes(boardCards.length)) issues.push('The board is still being dealt.');
+  try {
+    assertCards([...hole, ...boardCards].map(parseCard));
+  } catch {
+    issues.push('The same card was read twice. Waiting for a clearer view.');
+  }
+  if (pot == null || pot <= 0) issues.push('The total pot is not readable yet.');
+  if (call == null) issues.push('Waiting for your turn: no call or check button is visible.');
+  if (pot != null && call != null && call > pot)
+    issues.push('The call is larger than the pot. Check both amounts.');
+  if (labels.some((l) => /^all[ -]?in/.test(l)))
+    issues.push('An all-in or side pot needs manual review in screen mode.');
+  if (!actions.includes('fold') || !actions.includes(call === 0 ? 'check' : 'call'))
+    if (call != null) issues.push('Action buttons are unclear. Waiting for your turn.');
+  if (!Number.isInteger(opponents) || opponents < 1 || opponents > 5)
+    issues.push('Set the number of opponents still in this hand.');
+  if (hole.length !== 2 || ![0, 3, 4, 5].includes(boardCards.length))
+    equityIssues.push('Cards incomplete');
+  try {
+    assertCards([...hole, ...boardCards].map(parseCard));
+  } catch {
+    equityIssues.push('Duplicate cards');
+  }
+  if (!Number.isInteger(opponents) || opponents < 1 || opponents > 5)
+    equityIssues.push('Unknown opponents');
+  const used = [...(hero?.cards || []), ...(board?.cards || [])];
+  const confidence = used.length ? Math.min(...used.map((c) => c.confidence)) : 0;
+  return {
+    regions,
+    reading: {
+      hole,
+      board: boardCards,
+      pot,
+      call,
+      actions,
+      opponents,
+      issues,
+      equityIssues,
+      cardSignature: JSON.stringify([hole, boardCards, opponents]),
+      confidence,
+      signature: JSON.stringify([hole, boardCards, pot, call, actions, opponents]),
+      at: frame.at,
+    },
+  };
 }

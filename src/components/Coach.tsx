@@ -57,7 +57,7 @@ export function Coach({
         <div
           className="equity-ring"
           style={{
-            background: `conic-gradient(var(--accent) ${(result?.equity || 0) * 360}deg, #3D4D6B 0deg)`,
+            background: `conic-gradient(var(--accent) ${(result?.equity || 0) * 360}deg, var(--surface-3) 0deg)`,
           }}
         >
           <span>

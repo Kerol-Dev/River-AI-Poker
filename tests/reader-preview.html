@@ -169,6 +169,9 @@
         win: 0.59,
         tie: 0.04,
         equity: 0.61,
+        manualRaise: raiseGuidance
+          ? { target: 0.78, note: 'Manual size: 50% of the pot after calling.' }
+          : null,
         hole: ['Th', '7s'],
         board: ['Kd', 'Qc', '2h'],
         performance: graphReset ? undefined : performance,
@@ -265,6 +268,7 @@
     <script src="../browser-extension/adapter.js"></script>
     <script src="../browser-extension/bet-sizing.js"></script>
     <script src="../browser-extension/autoplay.js"></script>
+    <script src="../browser-extension/theme.js"></script>
     <script src="../browser-extension/interface.js"></script>
     <script src="../browser-extension/panel.js"></script>
     <script src="../browser-extension/content.js"></script>

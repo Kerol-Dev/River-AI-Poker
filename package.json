@@ -1,7 +1,7 @@
 {
   "name": "river-holdem-studio",
-  "version": "1.5.0",
-  "description": "A private, local-first macOS Hold’em companion with a compact browser HUD and mapped screen OCR.",
+  "version": "1.6.0",
+  "description": "A private, local-first macOS Hold’em companion for Bet365 and any browser table, with automatic screen reading.",
   "main": "electron/main.cjs",
   "directories": {
     "test": "tests"
@@ -13,7 +13,10 @@
     "start": "npm run build && electron .",
     "desktop": "electron .",
     "preview": "vite preview --host 127.0.0.1",
-    "package:mac": "npm run build:ocr && npm run build && node scripts/package.mjs",
+    "package:mac": "npm run build:ocr && npm run build && node scripts/package.mjs mac",
+    "package:win": "npm run build && node scripts/package.mjs win",
+    "package:extension": "node scripts/package-extension.mjs",
+    "test:ocr:windows": "node tests/ocr-windows.mjs",
     "test:ui": "npm run build && node tests/ui.mjs",
     "build:ocr": "node scripts/build-ocr.mjs",
     "test:ocr": "node tests/ocr-native.mjs",

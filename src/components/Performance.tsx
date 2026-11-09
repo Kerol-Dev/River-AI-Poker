@@ -153,21 +153,28 @@ export function Performance({
         }}
       >
         {selected && (
-          <line x1={cursorX} x2={cursorX} y1="8" y2={height - 8} stroke="#ffb19e" strokeWidth="1" />
+          <line
+            x1={cursorX}
+            x2={cursorX}
+            y1="8"
+            y2={height - 8}
+            style={{ stroke: 'var(--accent)' }}
+            strokeWidth="1"
+          />
         )}
         <line
           x1="12"
           x2={width - 12}
           y1={view === 'curve' ? y(0) : height / 2}
           y2={view === 'curve' ? y(0) : height / 2}
-          stroke="#7e8da455"
+          style={{ stroke: 'var(--line-strong)' }}
           strokeDasharray="4 5"
         />
         {view === 'curve' && pts.length > 0 && (
           <>
             <polyline
               points={coords}
-              stroke={data!.net < 0 ? '#ff6b5b' : '#f4ede0'}
+              style={{ stroke: data!.net < 0 ? 'var(--loss)' : 'var(--win)' }}
               strokeWidth="3"
               fill="none"
               strokeLinejoin="round"
@@ -178,7 +185,7 @@ export function Performance({
                 cx={12 + ((p.at - start) / duration) * (width - 24)}
                 cy={y(p.net)}
                 r="3"
-                fill="#ff6b5b"
+                style={{ fill: 'var(--accent)' }}
               >
                 <title>
                   {new Date(p.at).toLocaleTimeString()} · {money(p.net, data!.currency, true)}
@@ -199,7 +206,7 @@ export function Performance({
                 width={Math.max(2, w - 5)}
                 height={Math.max(1, h)}
                 rx="3"
-                fill={r.delta >= 0 ? '#f4ede0' : '#ff6b5b'}
+                style={{ fill: r.delta >= 0 ? 'var(--win)' : 'var(--loss)' }}
               >
                 <title>
                   {new Date(r.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ·{' '}
@@ -209,7 +216,13 @@ export function Performance({
             );
           })}
         {(!data || pts.length < 2) && (
-          <text x="300" y={height / 2 - 12} fill="#afbdd2" textAnchor="middle" fontSize="13">
+          <text
+            x="300"
+            y={height / 2 - 12}
+            style={{ fill: 'var(--text-3)' }}
+            textAnchor="middle"
+            fontSize="13"
+          >
             Waiting for two hand checkpoints
           </text>
         )}
