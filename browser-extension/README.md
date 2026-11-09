@@ -2,7 +2,7 @@
 
 Load this folder through Chrome → Extensions → Manage extensions → Developer mode → Load unpacked. Pair with the code from River → Browser table → Connection. The only network destination is the local River bridge on `127.0.0.1:17864`.
 
-After updating, reload this extension and refresh the poker tab between hands. Chrome’s extension manager must show **1.6.0**. Restart River to load its new interface, then copy its new pairing code. Loading an extension does not update already-injected scripts.
+After updating, reload this extension and refresh the poker tab between hands. Chrome’s extension manager must show **1.6.1**. Restart River to load its new interface, then copy its new pairing code. Loading an extension does not update already-injected scripts.
 
 ## Bet365 and any other site
 

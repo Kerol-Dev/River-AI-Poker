@@ -1,6 +1,6 @@
 {
   "name": "river-holdem-studio",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "A private, local-first macOS Hold’em companion for Bet365 and any browser table, with automatic screen reading.",
   "main": "electron/main.cjs",
   "directories": {

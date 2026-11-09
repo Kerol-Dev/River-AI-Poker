@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "River \u00b7 Table companion",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "A private Hold\u2019em companion for Bet365 and any site you turn it on for. Pair with the River macOS app.",
   "permissions": ["storage", "scripting", "webNavigation", "activeTab"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],

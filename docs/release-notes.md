@@ -1,4 +1,6 @@
-## River 1.6.0
+## River 1.6.1
+
+First public release of the 1.6 line (1.6.0 was not published).
 
 River now runs on **macOS and Windows 11**, reads tables on **any site**, and has a new look in light and dark.
 
@@ -6,10 +8,10 @@ River now runs on **macOS and Windows 11**, reads tables on **any site**, and ha
 
 | File                               | For                                    |
 | ---------------------------------- | -------------------------------------- |
-| `River-1.6.0-mac-arm64.dmg`        | Macs with Apple silicon (M1 and later) |
-| `River-1.6.0-mac-x64.dmg`          | Intel Macs                             |
-| `River-1.6.0-windows-setup.exe`    | Windows 10 and 11 (64-bit)             |
-| `River-1.6.0-chrome-extension.zip` | The Chrome table companion             |
+| `River-1.6.1-mac-arm64.dmg`        | Macs with Apple silicon (M1 and later) |
+| `River-1.6.1-mac-x64.dmg`          | Intel Macs                             |
+| `River-1.6.1-windows-setup.exe`    | Windows 10 and 11 (64-bit)             |
+| `River-1.6.1-chrome-extension.zip` | The Chrome table companion             |
 
 **macOS:** open the `.dmg` and drag River to Applications. The build is not notarised, so the first time, right-click River → **Open** → **Open**.
 

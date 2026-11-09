@@ -605,7 +605,7 @@ function Studio() {
           </button>
           <div className="sidebar-version">
             <span className="dot green" />
-            River 1.6.0<span>{osName} ready</span>
+            River 1.6.1<span>{osName} ready</span>
           </div>
         </div>
       </aside>
