@@ -56,11 +56,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kerol-dev/river.git"
+    "url": "https://github.com/Kerol-Dev/River-AI-Poker.git"
   },
-  "homepage": "https://github.com/kerol-dev/river",
+  "homepage": "https://github.com/Kerol-Dev/River-AI-Poker",
   "bugs": {
-    "url": "https://github.com/kerol-dev/river/issues"
+    "url": "https://github.com/Kerol-Dev/River-AI-Poker/issues"
   },
   "engines": {
     "node": ">=22.12"

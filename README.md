@@ -1,10 +1,10 @@
 <p align="center"><img src="docs/assets/river-hero.svg" alt="River: See the hand. Understand the move." width="100%"></p>
 
 <p align="center">
-  <a href="https://github.com/Kerol-Dev/river/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Kerol-Dev/river?style=flat-square&color=1d6fe0&labelColor=0f1720"></a>
+  <a href="https://github.com/Kerol-Dev/River-AI-Poker/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Kerol-Dev/River-AI-Poker?style=flat-square&color=1d6fe0&labelColor=0f1720"></a>
   <img alt="Platforms: macOS and Windows" src="https://img.shields.io/badge/platforms-macOS_%7C_Windows-1d6fe0?style=flat-square&labelColor=0f1720">
   <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache_2.0-1d6fe0?style=flat-square&labelColor=0f1720"></a>
-  <a href="https://github.com/Kerol-Dev/river/actions/workflows/ci.yml"><img alt="Validate River" src="https://github.com/Kerol-Dev/river/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/Kerol-Dev/River-AI-Poker/actions/workflows/ci.yml"><img alt="Validate River" src="https://github.com/Kerol-Dev/River-AI-Poker/actions/workflows/ci.yml/badge.svg"></a>
 </p>
 
 <p align="center"><strong>Your hand. Your next move. Your session.<br>A private Hold’em companion for macOS and Windows that keeps the important things in view.</strong></p>
@@ -21,7 +21,7 @@ River reads the poker table you are looking at, works out your win chance and th
 
 ## Download
 
-Get the files from the **[latest release](https://github.com/Kerol-Dev/river/releases/latest)**:
+Get the files from the **[latest release](https://github.com/Kerol-Dev/River-AI-Poker/releases/latest)**:
 
 | File                                   | For                                    |
 | -------------------------------------- | -------------------------------------- |
@@ -90,8 +90,8 @@ Bet365 also offers an optional automatic mode that you start yourself with actio
 Requires **Node 24**. On macOS the screen-reading helper also needs the **Xcode Command Line Tools**.
 
 ```sh
-git clone https://github.com/Kerol-Dev/river.git
-cd river
+git clone https://github.com/Kerol-Dev/River-AI-Poker.git
+cd River-AI-Poker
 npm ci
 npm start        # build and open River (macOS: run `npm run build:ocr` once first)
 npm run dev      # web preview of the interface
