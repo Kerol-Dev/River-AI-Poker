@@ -237,6 +237,7 @@ function HUD() {
             currency={data?.currency}
             equity={stale ? undefined : data?.result?.equity}
             win={stale ? undefined : data?.result?.win}
+            tie={stale ? undefined : data?.result?.tie}
             threshold={data?.threshold}
             pending={!stale && data?.holding}
             reason={
@@ -594,7 +595,7 @@ function Studio() {
           </button>
           <div className="sidebar-version">
             <span className="dot green" />
-            River 1.4.1<span>macOS ready</span>
+            River 1.5.0<span>macOS ready</span>
           </div>
         </div>
       </aside>

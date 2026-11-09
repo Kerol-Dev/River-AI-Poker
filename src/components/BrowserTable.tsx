@@ -185,6 +185,7 @@ export function BrowserTable({ reader, onHUD }: { reader: BrowserReaderState; on
           currency={snapshot?.currency}
           equity={reader.equityAssessment.valid ? equity.result?.equity : undefined}
           win={reader.equityAssessment.valid ? equity.result?.win : undefined}
+          tie={reader.equityAssessment.valid ? equity.result?.tie : undefined}
           threshold={decision?.threshold}
           pending={display.holding || (assessment.valid && equity.pending)}
           reason={decision ? insight.body : assessment.reason || equity.error}

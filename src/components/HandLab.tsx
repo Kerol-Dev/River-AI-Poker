@@ -2,9 +2,13 @@ import { BarChart3, FlaskConical, RotateCcw, X } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CATEGORIES, RANKS, SUITS, parseCard } from '../engine/cards';
 import { inRange, Range, RANGE_PERCENT } from '../engine/equity';
-import { useEquity } from '../hooks';
+import { useStudy } from '../study/useStudy';
+import { StudyCoach } from '../study/StudyCoach';
+import { studyExamples } from '../study/examples';
+import type { EquityInput } from '../study/equity';
+import type { ActionRange } from '../study/range-model';
 import { PlayingCard } from './Card';
-import { Coach, pct } from './Coach';
+import { pct } from './Coach';
 export type Scenario = { hole: Card[]; board: Card[]; pot: number; call: number };
 export const defaultScenario: Scenario = {
   hole: ['As', 'Qs'].map(parseCard),
@@ -17,13 +21,20 @@ export function HandLab({ initial, trials }: { initial: Scenario; trials: number
   const [opponents, setOpponents] = useState(1);
   const [range, setRange] = useState<Range>('random');
   const [picker, setPicker] = useState<{ type: 'hole' | 'board'; index: number } | null>(null);
-  const equity = useEquity({
+  const [action, setAction] = useState<ActionRange>('unknown');
+  const [reserve, setReserve] = useState<number | undefined>();
+  const input: EquityInput = {
     hole: scenario.hole,
     board: scenario.board,
     opponents,
     range,
     trials,
-  });
+    situation: {
+      actions: Array.from({ length: opponents }, (_, i) => (i === 0 ? action : 'unknown')),
+      pressure: scenario.call / Math.max(0.01, scenario.pot - scenario.call),
+    },
+  };
+  const equity = useStudy(input);
   const setBoard = (count: number) =>
     setScenario((s) => {
       const board = s.board.slice(0, count);
@@ -53,10 +64,42 @@ export function HandLab({ initial, trials }: { initial: Scenario; trials: number
               <button
                 className="icon-button"
                 title="Reset example"
-                onClick={() => setScenario(defaultScenario)}
+                onClick={() => {
+                  setScenario(defaultScenario);
+                  setAction('unknown');
+                  setRange('random');
+                  setOpponents(1);
+                  setReserve(undefined);
+                }}
               >
                 <RotateCcw size={15} />
               </button>
+            </div>
+            <div className="study-examples">
+              <label htmlFor="study-example">Review an example</label>
+              <select
+                id="study-example"
+                value=""
+                onChange={(e) => {
+                  const example = studyExamples[Number(e.target.value)];
+                  if (example) {
+                    setScenario(example);
+                    setAction(example.action);
+                    setRange('random');
+                    setOpponents(1);
+                    setReserve(undefined);
+                  }
+                }}
+              >
+                <option value="" disabled>
+                  Choose a study hand…
+                </option>
+                {studyExamples.map((example, i) => (
+                  <option key={example.name} value={i}>
+                    {example.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="scenario-cards">
               <div>
@@ -114,13 +157,14 @@ export function HandLab({ initial, trials }: { initial: Scenario; trials: number
                 Total pot <span>chips, including opposing bet</span>
                 <input
                   type="number"
-                  min="1"
+                  min="0.01"
+                  step="0.01"
                   max="1000000"
                   value={scenario.pot}
                   onChange={(e) =>
                     setScenario((s) => ({
                       ...s,
-                      pot: Math.max(1, Math.min(1000000, Number(e.target.value))),
+                      pot: Math.max(0.01, Math.min(1000000, Number(e.target.value))),
                     }))
                   }
                 />
@@ -130,6 +174,7 @@ export function HandLab({ initial, trials }: { initial: Scenario; trials: number
                 <input
                   type="number"
                   min="0"
+                  step="0.01"
                   max="1000000"
                   value={scenario.call}
                   onChange={(e) =>
@@ -153,6 +198,23 @@ export function HandLab({ initial, trials }: { initial: Scenario; trials: number
             </div>
           </section>
           <section className="panel range-panel">
+            <div className="study-action">
+              <label htmlFor="study-action">First opponent’s action</label>
+              <select
+                id="study-action"
+                value={action}
+                onChange={(e) => setAction(e.target.value as ActionRange)}
+              >
+                <option value="unknown">Unknown / no action assumed</option>
+                <option value="call">Called</option>
+                <option value="bet">Bet</option>
+                <option value="raise">Raised</option>
+              </select>
+              <p className="micro muted">
+                Choose the action from the hand you are reviewing. Other opponents stay unweighted.
+                This does not infer a betting history.
+              </p>
+            </div>
             <div className="section-label">
               <span>OPPONENT RANGE</span>
               <span className="tiny-tag">{RANGE_PERCENT[range]}% TARGET</span>
@@ -187,9 +249,9 @@ export function HandLab({ initial, trials }: { initial: Scenario; trials: number
               })}
             </div>
             <p className="micro muted">
-              Illustrative preflop ordering, not a solved range. Equal weights within the range;
-              known cards are removed. Cutoff ties may slightly exceed the target. All opponents use
-              this same assumption.
+              Illustrative preflop ordering, not a solved range. The baseline uses equal weights;
+              action scenarios reweight these hands. Known cards are removed. Cutoff ties may
+              slightly exceed the target. All opponents use this same assumption.
             </p>
           </section>
           <section className="panel distribution-panel">
@@ -214,12 +276,13 @@ export function HandLab({ initial, trials }: { initial: Scenario; trials: number
             </p>
           </section>
         </div>
-        <Coach
+        <StudyCoach
           {...equity}
+          input={input}
+          reserve={reserve}
+          onReserve={setReserve}
           pot={scenario.pot}
           call={scenario.call}
-          range={range}
-          opponents={opponents}
         />
       </div>
       {picker && (

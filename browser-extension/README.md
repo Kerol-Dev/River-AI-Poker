@@ -2,7 +2,7 @@
 
 Load this folder through Chrome → Extensions → Manage extensions → Developer mode → Load unpacked. Pair with the code from River → Browser table → Connection. The supported frame is `https://update-com.p365play.com/html5/*`; the only network destination is the local River bridge on `127.0.0.1:17864`.
 
-After updating, reload this extension and refresh the poker tab between hands. Chrome’s extension manager must show **1.4.1**; the reader now has Table, Players, Session and Settings tabs. Restart River to load its new interface, then copy its new pairing code. Loading an extension does not update already-injected scripts.
+After updating, reload this extension and refresh the poker tab between hands. Chrome’s extension manager must show **1.5.0**; the reader now has Table, Players, Session and Settings tabs. Restart River to load its new interface, then copy its new pairing code. Loading an extension does not update already-injected scripts.
 
 ## Manual and automatic modes
 
@@ -37,3 +37,7 @@ Bet and raise amounts now use the field’s focus → decimal entry → input/ch
 Briefly missing pot labels or seat details pause the run for up to 3.5 seconds instead of immediately reporting a different table. A fresh matching table reading starts a new action countdown. A confirmed identity change, prolonged unreadability, hidden tab, disconnection, sitting out or exhausted limit still stops the run. The original stop reason stays visible across the companion’s tabs until the next explicit start.
 
 Validation includes the real entry helper against synthetic controlled fields and a fake-chip Chrome run. It does not establish live-client wager execution.
+
+## 1.5.0: clearer outcome display
+
+The Table tab now keeps outright wins, ties, estimated pot share, and call price separate in one compact row. Missing or stale win/tie readings show a dash. The new range-sensitivity model is available only in the app’s offline Hand Lab; browser decision and wagering logic are unchanged in this release.

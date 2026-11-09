@@ -6,6 +6,7 @@ export function BrowserDecision({
   currency,
   equity,
   win,
+  tie,
   threshold,
   reason,
   pending = false,
@@ -16,6 +17,7 @@ export function BrowserDecision({
   currency?: string;
   equity?: number;
   win?: number;
+  tie?: number;
   threshold?: number;
   reason?: string;
   pending?: boolean;
@@ -41,8 +43,16 @@ export function BrowserDecision({
       <p title={reason}>{reason || 'Connect the reader to see your next decision.'}</p>
       {equity !== undefined && (
         <div className="decision-metrics">
+          <div title="Chance of winning outright against the assumed range">
+            <span>Win outright</span>
+            <strong>{win !== undefined ? pct(win) : '—'}</strong>
+          </div>
+          <div title="Chance of sharing the best hand">
+            <span>Tie</span>
+            <strong>{tie !== undefined ? pct(tie) : '—'}</strong>
+          </div>
           <div>
-            <span>Estimated equity</span>
+            <span title="Includes your share of split pots">Pot share</span>
             <strong>{pct(equity)}</strong>
           </div>
           <div>

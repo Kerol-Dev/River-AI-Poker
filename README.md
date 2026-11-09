@@ -91,6 +91,14 @@ The app appears in `release/River-darwin-<architecture>/River.app`. Packaged use
 
 For another app, choose **Screen reader** in River. Select a window, review the suggested regions, set the current street and opponent count, confirm the map and start reading. macOS Screen Recording permission is required. The [setup guide](docs/getting-started.md) covers mapping, updates and troubleshooting.
 
+## New in 1.5: review the assumption, not just the percentage
+
+Hand Lab now compares a starting range, an action-weighted range, a tighter stress scenario, and a stronger continuing range. Try the built-in **Counterfeited pair** and **High card facing a raise** examples, then compare them with a guaranteed split or strong draw. Outright wins, ties and estimated pot share are shown separately.
+
+Heads-up river results enumerate every compatible opposing hand for each assumed range. Earlier streets use stable Monte Carlo samples. A visible, adjustable policy reserve is separate from sampling uncertainty. These are **uncalibrated study heuristics**, not a solver, professional playing system or profit forecast. Read the [study model notes](docs/study-model.md).
+
+This model is isolated to offline Hand Lab. The existing live decision engine and wagering controls are unchanged by this release. The compact reader and macOS HUD receive clearer outcome labels only.
+
 ## Built for understanding
 
 - **Win chance before your turn.** Fresh, valid cards are analysed independently of whether action buttons are available. Ties and equity remain separate concepts: win chance is the probability of winning outright; equity includes your share of ties.
@@ -111,6 +119,7 @@ Browser automatic mode is off by default. The user starts each bounded run with 
 
 ```text
 src/engine/          Hold’em rules, evaluation and equity worker
+src/study/           Isolated offline range comparisons and hand review
 src/reader/          Browser validation, observations and accounting
 src/screen/          Window mapping and conservative OCR parsing
 browser-extension/  Scoped client adapter and compact companion
