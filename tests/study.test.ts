@@ -43,6 +43,13 @@ describe('offline range sensitivity', () => {
     assert.equal(review.action, 'Fold candidate');
     assert.equal(review.threshold, 1 / 3);
   });
+  for (const index of [5, 6])
+    it(`tests the betting range for ${studyExamples[index].name}`, () => {
+      const { result, review } = example(index);
+      assert.ok(result.analysis!.baseline.equity > review.threshold);
+      assert.ok(result.equity < review.threshold);
+      assert.equal(review.action, 'Fold candidate');
+    });
   it('allows a profitable split-only call instead of folding every zero-win hand', () => {
     const { result, review } = example(2);
     assert.equal(result.win, 0);

@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('river', {
+  platform: process.platform,
   screen: {
     sources: () => ipcRenderer.invoke('screen:sources'),
     capture: (input) => ipcRenderer.invoke('screen:capture', input),

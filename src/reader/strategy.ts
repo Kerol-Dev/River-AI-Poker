@@ -1,6 +1,6 @@
-import { EquityResult, advice } from '../engine/equity';
+import { EquityResult } from '../engine/equity';
 import { parseCard, suit } from '../engine/cards';
-import { ReaderSnapshot, ReaderDecision, assessSnapshot } from './model';
+import { ReaderSnapshot, ReaderDecision, assessSnapshot, evaluateLiveDecision } from './model';
 import { foldEstimate, OpponentBook, rangeFor } from './opponents';
 const cents = (n: number) => Math.round(n * 100) / 100;
 function mix(seed: string) {
@@ -15,11 +15,12 @@ export function makePlan(
   now = Date.now(),
 ): ReaderDecision | null {
   if (!assessSnapshot(s, now).valid) return null;
-  const base = advice(result.equity, s.callPot ?? s.pot!, s.call!, s.opponents),
+  const evaluated = evaluateLiveDecision(s, result),
+    base = evaluated.line,
     hero = s.seats.find((p) => p.hero);
-  let action = base.action,
+  let action = evaluated.action,
     intent: ReaderDecision['intent'] = action.toLowerCase() as any,
-    explanation = base.explanation;
+    explanation = evaluated.explanation;
   const opponents = s.seats.filter((p) => !p.hero && p.inHand),
     villain = opponents.length === 1 ? book.profiles[opponents[0].username || ''] : undefined,
     fold = foldEstimate(villain);
@@ -33,7 +34,8 @@ export function makePlan(
         s.hole.map(parseCard).some((c) => suit(c) === color),
     );
   const canAggress = s.actions.includes('bet') || s.actions.includes('raise');
-  let fraction = result.equity > 0.8 ? 0.75 : 0.5;
+  const preflop = evaluated.preflop;
+  let fraction = preflop ? preflop.fraction : result.equity > 0.8 ? 0.75 : 0.5;
   const foldNeeded = fraction / (1 + fraction);
   if (s.call === 0 && canAggress && s.opponents === 1 && fold && fold.lower > foldNeeded + 0.05) {
     if (flushDraw && result.equity > 0.2 && result.equity < 0.58 && mix(s.handId + 'semi') < 20) {
@@ -66,7 +68,8 @@ export function makePlan(
   if (['Raise', 'Bet'].includes(action)) {
     if (!['bluff', 'semi-bluff'].includes(intent || '')) intent = 'value';
     const maximum = hero?.stack != null && s.heroBet != null ? hero.stack + s.heroBet : null;
-    const minimum = s.sizing?.min ?? s.actionAmounts?.[action.toLowerCase() as 'raise' | 'bet'];
+    const buttonAmount = s.actionAmounts?.[action.toLowerCase() as 'raise' | 'bet'];
+    const minimum = s.sizing?.min ?? buttonAmount;
     if (maximum == null || minimum == null || maximum < minimum) {
       action = s.call === 0 ? 'Check' : 'Call';
       intent = action.toLowerCase() as any;
@@ -75,9 +78,14 @@ export function makePlan(
         'Aggression is not sized because legal bounds are unreadable. Use the verified check/call price.';
     } else {
       const desired = (s.heroBet || 0) + s.call! + fraction * (s.pot! + s.call!);
-      target = cents(Math.min(maximum, Math.max(minimum, desired)));
+      target =
+        s.sizing?.editable === false && buttonAmount != null && buttonAmount <= maximum
+          ? cents(buttonAmount)
+          : cents(Math.min(maximum, Math.max(minimum, desired)));
       amount = cents(target - (s.heroBet || 0));
-      if (intent === 'value')
+      if (intent === 'value' && preflop)
+        explanation = `${preflop.explanation} Raise to ${s.currency}${target.toFixed(2)}.`;
+      else if (intent === 'value')
         explanation = `Value sizing: ${Math.round(fraction * 100)}% of the pot after calling, bounded by the visible minimum and your remaining stack. Raise/bet to ${s.currency}${target.toFixed(2)}; ${s.currency}${amount.toFixed(2)} additional chips. This does not solve opponents’ continuing ranges.`;
     }
   }
@@ -103,8 +111,19 @@ export function makePlan(
     callEV: base.callEV,
     explanation,
     updatedAt: now,
+    preflop: preflop ? { spot: preflop.spot, code: preflop.code } : undefined,
     reasoning: [
+      ...(preflop
+        ? [
+            `Preflop: ${preflop.code}, ${{ unopened: 'nobody has raised', limped: 'players limped', raised: 'facing a raise', reraised: 'facing a re-raise' }[preflop.spot]}. Decision from River's starting-hand ranges for this spot; equity shown counts only players who raised or called.`,
+          ]
+        : []),
       `Eligible pot ${s.currency}${(s.callPot ?? s.pot!).toFixed(2)} · call ${s.currency}${s.call!.toFixed(2)} · required equity ${(base.threshold * 100).toFixed(1)}%`,
+      ...(result.analysis
+        ? [
+            `${result.analysis.label}: ${(result.equity * 100).toFixed(1)}% observed · ${(result.analysis.cautious.equity * 100).toFixed(1)}% cautious · ${(evaluated.decisionFloor * 100).toFixed(1)}% decision floor`,
+          ]
+        : []),
       ...ranges.map(
         (r) =>
           `${r.name}: ${r.range === 'random' ? 'unknown range' : r.range + ' heuristic range'} (${r.samples} observed priced preflop decisions)`,

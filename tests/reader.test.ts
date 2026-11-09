@@ -8,9 +8,12 @@ import {
   assessEquitySnapshot,
   readerDecision,
   ReaderSnapshot,
+  situationFromSnapshot,
 } from '../src/reader/model';
 import { makePlan } from '../src/reader/strategy';
-import { emptyBook } from '../src/reader/opponents';
+import { emptyBook, OpponentBook } from '../src/reader/opponents';
+import { calculateEquity } from '../src/engine/equity';
+import { parseCard } from '../src/engine/cards';
 const require = createRequire(import.meta.url);
 const { createReaderBridge } = require('../electron/reader-bridge.cjs');
 const adapter = readFileSync(new URL('../browser-extension/adapter.js', import.meta.url), 'utf8');
@@ -721,5 +724,137 @@ describe('always-visible compact win chance', () => {
       assert.equal(root.querySelector('#read-equity')!.textContent, '—');
     }
     dom.window.close();
+  });
+});
+
+describe('live action-conditioned range and postflop value discipline', () => {
+  it('folds Queen-Four offsuit on the 8d 2s 9c Js turn facing a €4.00 bet into €9.49', () => {
+    const f = fixture();
+    const s: ReaderSnapshot = {
+      ...f.read(),
+      hole: ['Qd', '4c'],
+      board: ['8d', '2s', '9c', 'Js'],
+      pot: 9.49,
+      call: 4,
+      heroBet: 0,
+      actionAmounts: { call: 4, raise: 8 },
+      sizing: { min: 8, max: 50.73, editable: true },
+      seats: [
+        {
+          id: 'player-seat-1',
+          label: 'beedark738',
+          username: 'beedark738',
+          hero: false,
+          inHand: true,
+          stack: 43.38,
+          bet: 4,
+          lastAction: 'bet',
+        },
+        {
+          id: 'player-seat-3',
+          label: 'You',
+          hero: true,
+          inHand: true,
+          stack: 50.73,
+          bet: 0,
+        },
+      ],
+    };
+    const eq = calculateEquity({
+      hole: s.hole.map(parseCard),
+      board: s.board.map(parseCard),
+      opponents: s.opponents,
+      range: 'random',
+      trials: 8000,
+      situation: situationFromSnapshot(s),
+    });
+    assert.ok(eq.equity < 0.26, `expected action-weighted equity < 26%, got ${eq.equity}`);
+    const plan = makePlan(s, eq, emptyBook(), s.receivedAt)!;
+    assert.equal(plan.action, 'Fold');
+    assert.equal(readerDecision(s, eq, s.receivedAt)?.action, 'Fold');
+    f.dom.window.close();
+  });
+
+  it('folds Ace-King high on the 2d 6h 4h 7s 3s river facing €12.50 into €26.04 and never value-raises high card', () => {
+    const f = fixture();
+    const s: ReaderSnapshot = {
+      ...f.read(),
+      hole: ['Ad', 'Kh'],
+      board: ['2d', '6h', '4h', '7s', '3s'],
+      pot: 26.04,
+      call: 12.5,
+      heroBet: 0,
+      actionAmounts: { call: 12.5, raise: 25 },
+      sizing: { min: 25, max: 90.99, editable: true },
+      seats: [
+        {
+          id: 'player-seat-1',
+          label: 'Voodooman123',
+          username: 'Voodooman123',
+          hero: false,
+          inHand: true,
+          stack: 33.07,
+          bet: 12.5,
+          lastAction: 'bet',
+        },
+        {
+          id: 'player-seat-3',
+          label: 'You',
+          hero: true,
+          inHand: true,
+          stack: 90.99,
+          bet: 0,
+        },
+      ],
+    };
+    const book: OpponentBook = {
+      profiles: {
+        Voodooman123: {
+          name: 'Voodooman123',
+          hands: 40,
+          actions: 40,
+          checks: 10,
+          calls: 10,
+          bets: 10,
+          raises: 5,
+          folds: 5,
+          pricedPre: 40,
+          enteredPre: 10,
+          faced: 20,
+          foldedFacing: 8,
+          showdowns: 2,
+          riverBluffCandidates: 0,
+          updated: s.receivedAt,
+        },
+      },
+      events: [],
+    };
+    for (const range of ['random', 'wide', 'balanced', 'tight'] as const) {
+      const eq = calculateEquity({
+        hole: s.hole.map(parseCard),
+        board: s.board.map(parseCard),
+        opponents: 1,
+        range,
+        opponentRanges: [range],
+        trials: 8000,
+        situation: situationFromSnapshot(s),
+      });
+      const plan = makePlan(s, eq, book, s.receivedAt)!;
+      assert.equal(plan.action, 'Fold', `expected Fold for range ${range}, got ${plan.action}`);
+      assert.equal(readerDecision(s, eq, s.receivedAt)?.action, 'Fold');
+    }
+    // Even if raw unconditioned 74% equity is passed on the river with High card, it must never Raise
+    const rawUnconditioned = {
+      equity: 0.741,
+      win: 0.73,
+      tie: 0.025,
+      loss: 0.245,
+      margin: 0,
+      trials: 990,
+      distribution: [],
+      made: 'High card',
+    };
+    assert.notEqual(makePlan(s, rawUnconditioned, book, s.receivedAt)?.action, 'Raise');
+    f.dom.window.close();
   });
 });

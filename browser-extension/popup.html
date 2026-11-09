@@ -5,18 +5,49 @@
     <meta name="color-scheme" content="dark" />
     <title>River · Table companion</title>
     <style>
+      :root {
+        --bg: #0f1215;
+        --surface: #151a1f;
+        --surface-2: #1b2128;
+        --line: #262e37;
+        --line-strong: #35404b;
+        --text: #e9eef3;
+        --text-2: #a3afbb;
+        --text-3: #6f7c89;
+        --accent: #5aa9ff;
+        --on-accent: #06182c;
+        --win: #36d39a;
+        --loss: #ff6b76;
+        color-scheme: dark;
+      }
+      :root.light {
+        --bg: #f3f5f8;
+        --surface: #ffffff;
+        --surface-2: #f4f6f9;
+        --line: #e3e8ee;
+        --line-strong: #cdd5de;
+        --text: #0f1720;
+        --text-2: #4a5867;
+        --text-3: #7d8a97;
+        --accent: #1d6fe0;
+        --on-accent: #ffffff;
+        --win: #0f8a5f;
+        --loss: #d6334a;
+        color-scheme: light;
+      }
       * {
         box-sizing: border-box;
       }
       body {
-        width: 334px;
-        padding: 23px;
+        width: 320px;
         margin: 0;
-        background: #1c1b1a;
-        color: #f4ede0;
+        padding: 16px;
+        background: var(--bg);
+        color: var(--text);
         font:
-          12px -apple-system,
+          12px/1.45 -apple-system,
           BlinkMacSystemFont,
+          'Inter',
           Arial,
           sans-serif;
       }
@@ -24,190 +55,211 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 14px;
       }
       .brand {
-        letter-spacing: 3px;
-        font-size: 14px;
+        letter-spacing: 2.4px;
+        font-size: 13px;
         font-weight: 800;
       }
       .brand b {
-        color: #ff6b5b;
-        font-size: 20px;
+        color: var(--accent);
+        margin-right: 5px;
         letter-spacing: 0;
-        margin-right: 6px;
       }
       .version {
-        font-size: 9px;
-        color: #998c7c;
+        font-size: 10px;
+        color: var(--text-3);
+        font-variant-numeric: tabular-nums;
       }
-      h1 {
-        font-size: 26px;
-        letter-spacing: -1px;
-        line-height: 1.15;
-        margin: 0 0 10px;
-      }
-      p {
-        font-size: 12px;
-        color: #b5a794;
-        line-height: 1.65;
-        margin: 0;
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 10px;
       }
       .connection {
-        padding: 14px;
-        border: 1px solid #484034;
-        border-radius: 10px;
-        background: #27231e;
-        margin: 20px 0 14px;
         display: flex;
         gap: 10px;
         align-items: center;
       }
       .dot {
-        width: 7px;
-        height: 7px;
+        flex: none;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
-        background: #867460;
+        background: var(--text-3);
       }
       .connection.ready .dot {
-        background: #b9cb9b;
+        background: var(--win);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--win) 20%, transparent);
       }
-      .connection strong {
+      .connection strong,
+      h2 {
+        display: block;
         font-size: 12px;
-        display: block;
+        font-weight: 700;
+        margin: 0;
       }
-      .connection small {
-        font-size: 10px;
-        color: #ac9b85;
+      .connection small,
+      .muted {
         display: block;
-        margin-top: 4px;
+        font-size: 11px;
+        color: var(--text-3);
+        margin-top: 2px;
+      }
+      h2 {
+        margin-bottom: 2px;
+        overflow-wrap: anywhere;
+      }
+      p {
+        margin: 0;
+      }
+      summary {
+        font-size: 11px;
+        font-weight: 650;
+        color: var(--text-2);
+        cursor: pointer;
+        margin-top: 10px;
       }
       label {
         display: block;
-        margin: 13px 0 7px;
-        color: #c2b4a0;
+        margin: 10px 0 5px;
+        color: var(--text-3);
         font-size: 10px;
         font-weight: 650;
       }
       input {
         width: 100%;
-        background: #141210;
-        color: #f4ede0;
-        border: 1px solid #554737;
-        padding: 12px;
-        border-radius: 7px;
-        font: 12px inherit;
+        background: var(--surface-2);
+        color: var(--text);
+        border: 1px solid var(--line-strong);
+        padding: 9px 10px;
+        border-radius: 8px;
+        font: inherit;
       }
       button {
         width: 100%;
-        padding: 12px;
-        border: 0;
+        padding: 9px 12px;
+        border: 1px solid var(--accent);
         border-radius: 8px;
         font:
-          750 12px -apple-system,
+          650 12px -apple-system,
+          BlinkMacSystemFont,
+          Arial,
           sans-serif;
         cursor: pointer;
-        color: #1c1b1a;
-        background: #ff6b5b;
-        margin-top: 9px;
+        color: var(--on-accent);
+        background: var(--accent);
+        margin-top: 10px;
       }
       button:disabled {
-        opacity: 0.4;
+        opacity: 0.45;
         cursor: not-allowed;
       }
       button.secondary {
-        background: #393027;
-        color: #f4ede0;
-        border: 1px solid #5a4836;
+        background: var(--surface-2);
+        color: var(--text);
+        border-color: var(--line-strong);
       }
-      .connection + details {
-        margin-bottom: 12px;
+      button.secondary:hover:not(:disabled) {
+        border-color: var(--accent);
       }
-      summary {
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2px;
+        padding: 3px;
+        margin-top: 8px;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+      }
+      .segmented button {
+        margin: 0;
+        padding: 6px 4px;
+        border: 0;
+        border-radius: 6px;
+        background: none;
+        color: var(--text-3);
         font-size: 11px;
-        color: #c7b69e;
-        cursor: pointer;
       }
-      details > p {
-        margin-top: 12px;
-        font-size: 11px;
-      }
-      .other-apps {
-        border-top: 1px solid #40362b;
-        margin-top: 21px;
-        padding-top: 17px;
-      }
-      .other-apps h2 {
-        font-size: 12px;
-        margin: 0 0 7px;
-      }
-      .other-apps p {
-        font-size: 11px;
+      .segmented button[aria-pressed='true'] {
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
       }
       #status {
         font-size: 11px;
-        line-height: 1.5;
-        color: #ffae97;
-        margin-top: 12px;
-        min-height: 16px;
+        color: var(--loss);
+        min-height: 0;
+        margin: 2px 0 8px;
+      }
+      #status:empty {
+        display: none;
       }
       footer {
-        font-size: 9px;
-        color: #947b60;
-        margin-top: 20px;
         display: flex;
         justify-content: space-between;
+        font-size: 10px;
+        color: var(--text-3);
+        margin-top: 12px;
       }
       a {
-        color: #c6a889;
+        color: var(--text-2);
         text-decoration: none;
       }
       button:focus-visible,
       input:focus-visible,
       summary:focus-visible,
       a:focus-visible {
-        outline: 2px solid #ffaf93;
-        outline-offset: 3px;
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
     </style>
   </head>
   <body>
     <header>
-      <span class="brand"><b>♠</b>RIVER</span><span class="version">1.4 · CHROME</span>
+      <span class="brand"><b>♠</b>RIVER</span><span class="version">1.6.0</span>
     </header>
-    <h1>A clearer view.<br />A calmer table.</h1>
-    <p>Your cards, next move and session.<br />One small companion beside the table.</p>
-    <div id="connection" class="connection">
-      <span class="dot"></span>
-      <div>
-        <strong id="connection-title">Connect to River</strong
-        ><small id="connection-detail">Open the macOS app to get started.</small>
+    <section class="card">
+      <div id="connection" class="connection">
+        <span class="dot"></span>
+        <div>
+          <strong id="connection-title">Connect to River</strong
+          ><small id="connection-detail">Open the macOS app to get started.</small>
+        </div>
       </div>
-    </div>
-    <details id="pairing" open>
-      <summary>Pair this browser</summary>
-      <p>In River, open Browser table → Connection and copy your pairing code.</p>
-      <label for="token">Pairing code</label
-      ><input
-        id="token"
-        type="password"
-        autocomplete="off"
-        placeholder="Paste your code"
-        spellcheck="false"
-      /><button id="pair">Connect to River</button>
-    </details>
-    <button id="toggle" class="secondary" disabled>Start reader</button>
+      <details id="pairing" open>
+        <summary>Pair this browser</summary>
+        <label for="token">Pairing code from River → Browser table → Connection</label
+        ><input
+          id="token"
+          type="password"
+          autocomplete="off"
+          placeholder="Paste your code"
+          spellcheck="false"
+        />
+        <button id="pair">Connect</button>
+      </details>
+      <button id="toggle" class="secondary" disabled>Start reader</button>
+    </section>
     <p id="status" role="status"></p>
-    <section class="other-apps">
-      <h2>Playing in another app?</h2>
-      <p>
-        Open <b>Screen reader</b> in River. Choose a window and map its cards and amounts with local
-        OCR.
-      </p>
+    <section class="card site">
+      <h2 id="site-title">This site</h2>
+      <p id="site-detail" class="muted">Open a poker table in this tab.</p>
+      <button id="site" class="secondary" hidden>Use River on this site</button>
+    </section>
+    <section class="card">
+      <h2>Appearance</h2>
+      <div class="segmented" role="group" aria-label="Theme">
+        <button data-theme="system">System</button><button data-theme="light">Light</button
+        ><button data-theme="dark">Dark</button>
+      </div>
     </section>
     <footer>
-      <span>PRIVATE BY DESIGN</span
-      ><a href="https://github.com/kerol-dev/river" target="_blank" rel="noreferrer">Project ↗</a>
+      <span>Table drawn as one image? Use Screen reader in River.</span>
     </footer>
     <script src="popup.js"></script>
   </body>

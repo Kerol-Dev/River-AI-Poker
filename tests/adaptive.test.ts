@@ -8,6 +8,7 @@ import {
   foldEstimate,
 } from '../src/reader/opponents';
 import { makePlan } from '../src/reader/strategy';
+import { manualSize } from '../src/reader/manual-sizing';
 import { ReaderSnapshot } from '../src/reader/model';
 import { calculateEquity } from '../src/engine/equity';
 import { parseCard } from '../src/engine/cards';
@@ -142,5 +143,33 @@ describe('bounded readable sizing', () => {
     const r = calculateEquity(input);
     assert.ok(r.equity > 0 && r.equity < 1);
     assert.throws(() => calculateEquity({ ...input, opponentRanges: ['tight'] }));
+  });
+});
+
+describe('manual pot-size suggestions', () => {
+  it('uses the nearest legal preset, including the call in the raise-to amount', () => {
+    const s = sample();
+    const d = makePlan(s, result, emptyBook(), 10000)!;
+    assert.equal(d.target, 5.25);
+    assert.deepEqual(manualSize(s, d), {
+      target: 4,
+      note: 'Manual size: 50% of the pot after calling.',
+    });
+    assert.deepEqual(manualSize({ ...s, sizing: { ...s.sizing!, min: 5 } }, d), {
+      target: 6.5,
+      note: 'Manual size: 100% of the pot after calling.',
+    });
+    assert.equal(d.target, 5.25);
+  });
+  it('omits a size rather than clamping a preset to an off-preset target', () => {
+    const s = sample();
+    const d = makePlan(s, result, emptyBook(), 10000)!;
+    assert.equal(manualSize({ ...s, sizing: { ...s.sizing!, max: 3.5 } }, d)?.target, null);
+    assert.equal(manualSize({ ...s, sizing: { ...s.sizing!, min: null } }, d)?.target, null);
+    assert.equal(manualSize(s, { ...d, target: 7 }), null);
+    assert.equal(
+      manualSize({ ...s, automation: { running: true, reason: '', count: 0, spent: 0 } }, d),
+      null,
+    );
   });
 });

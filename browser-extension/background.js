@@ -1,6 +1,71 @@
 const ORIGIN = 'http://127.0.0.1:17864';
 const POKER_HOST = 'update-com.p365play.com';
+const SITE_FILES = ['generic-adapter.js', 'theme.js', 'interface.js', 'panel.js', 'content.js'];
 let activeFrame = null;
+const siteId = (origin) => 'river-site-' + origin.replace(/[^a-z0-9]/gi, '_').slice(0, 90);
+async function allowedSite(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.hostname === POKER_HOST) return { origin: parsed.origin, bet365: true };
+  const { sites = [] } = await chrome.storage.local.get('sites');
+  return sites.some((s) => s.origins.includes(parsed.origin))
+    ? { origin: parsed.origin, bet365: false }
+    : null;
+}
+async function enableSite(origin, origins, tabId) {
+  if (!/^https?:\/\/[^/]+$/.test(origin) || !Array.isArray(origins) || origins.length > 12)
+    throw new Error('Unsupported site.');
+  const clean = [...new Set([origin, ...origins])].filter(
+    (o) => /^https?:\/\/[^/]+$/.test(o) && new URL(o).hostname !== POKER_HOST,
+  );
+  if (!(await chrome.permissions.contains({ origins: clean.map((o) => o + '/*') })))
+    throw new Error('Allow this site in Chrome first.');
+  const { sites = [] } = await chrome.storage.local.get('sites');
+  await chrome.storage.local.set({
+    sites: [...sites.filter((s) => s.origin !== origin), { origin, origins: clean }].slice(-40),
+  });
+  const id = siteId(origin);
+  await chrome.scripting.unregisterContentScripts({ ids: [id] }).catch(() => {});
+  await chrome.scripting.registerContentScripts([
+    {
+      id,
+      matches: clean.map((o) => o + '/*'),
+      js: SITE_FILES,
+      allFrames: true,
+      runAt: 'document_idle',
+      persistAcrossSessions: true,
+    },
+  ]);
+  if (Number.isInteger(tabId)) {
+    const frames = (await chrome.webNavigation.getAllFrames({ tabId }).catch(() => [])) || [];
+    for (const frame of frames) {
+      let frameOrigin;
+      try {
+        frameOrigin = new URL(frame.url).origin;
+      } catch {
+        continue;
+      }
+      if (!clean.includes(frameOrigin)) continue;
+      await chrome.scripting
+        .executeScript({ target: { tabId, frameIds: [frame.frameId] }, files: SITE_FILES })
+        .catch(() => {});
+    }
+  }
+  return { ok: true };
+}
+async function disableSite(origin) {
+  const { sites = [] } = await chrome.storage.local.get('sites');
+  const site = sites.find((s) => s.origin === origin);
+  await chrome.scripting.unregisterContentScripts({ ids: [siteId(origin)] }).catch(() => {});
+  await chrome.storage.local.set({ sites: sites.filter((s) => s.origin !== origin) });
+  if (site)
+    await chrome.permissions.remove({ origins: site.origins.map((o) => o + '/*') }).catch(() => {});
+  return { ok: true };
+}
 let pendingSend = Promise.resolve();
 async function performSend(path, data, token) {
   const r = await fetch(ORIGIN + path, {
@@ -30,9 +95,14 @@ function send(path, data, token) {
 }
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   (async () => {
-    const settings = await chrome.storage.local.get(['token', 'enabled', 'profile']);
+    const settings = await chrome.storage.local.get(['token', 'enabled', 'profile', 'profiles']);
+    // Popup and other extension pages are trusted; pages only reach the table handlers.
+    const fromExtension =
+      sender.id === chrome.runtime.id && (sender.url || '').startsWith(chrome.runtime.getURL(''));
+    const site = !fromExtension ? await allowedSite(sender.url) : null;
+    const profiles = settings.profiles || {};
     if (message.type === 'pair') {
-      if (sender.tab || !/^[a-f0-9]{48}$/.test(message.token || ''))
+      if (!fromExtension || !/^[a-f0-9]{48}$/.test(message.token || ''))
         throw new Error('Enter the pairing code copied from River.');
       const result = await send('/pair', {}, message.token);
       await chrome.storage.local.set({ token: message.token, enabled: false });
@@ -42,10 +112,13 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
       return {
         enabled: !!settings.enabled,
         paired: !!settings.token,
-        profile: settings.profile || null,
+        profile: site && !site.bet365 ? profiles[site.origin] || null : settings.profile || null,
       };
-    if (sender.tab) {
-      if (new URL(sender.url).hostname !== POKER_HOST) throw new Error('Unsupported table origin.');
+    if (fromExtension && message.type === 'enable-site')
+      return enableSite(message.origin, message.origins, message.tabId);
+    if (fromExtension && message.type === 'disable-site') return disableSite(message.origin);
+    if (!fromExtension) {
+      if (!site) throw new Error('River is not turned on for this site.');
       if (message.type === 'reset-session') {
         if (!settings.token) throw Error('Pair first');
         return send('/command', { action: 'reset-session' }, settings.token);
@@ -53,7 +126,16 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
       if (message.type === 'profile') {
         if (!Array.isArray(message.profile) || message.profile.length > 15)
           throw new Error('Invalid mapping.');
-        await chrome.storage.local.set({ profile: message.profile });
+        if (site.bet365) await chrome.storage.local.set({ profile: message.profile });
+        else
+          await chrome.storage.local.set({
+            profiles: Object.fromEntries(
+              [
+                ...Object.entries(profiles).filter(([k]) => k !== site.origin),
+                [site.origin, message.profile],
+              ].slice(-40),
+            ),
+          });
         return { ok: true };
       }
       if (message.type === 'invalidate') {

@@ -4,13 +4,15 @@ import {
   assessEquitySnapshot,
   BridgeStatus,
   ReaderSnapshot,
-  readerDecision,
+  situationFromSnapshot,
 } from './model';
 import { emptyDisplay, presentCards } from './presentation';
 import { useJournal } from './useJournal';
 import { useOpponents } from './useOpponents';
 import { rangeFor } from './opponents';
 import { makePlan } from './strategy';
+import { preflopView } from './preflop';
+import { manualSize } from './manual-sizing';
 import { performanceData } from '../components/Performance';
 import { cardText } from '../engine/cards';
 import { useEquity } from '../hooks';
@@ -54,28 +56,32 @@ export function useBrowserReader(trials: number) {
   }, [snapshot, now]);
   const journal = useJournal(snapshot);
   const opponents = useOpponents(snapshot);
-  const assessment = useMemo(() => assessSnapshot(snapshot, now), [snapshot, now]);
-  const equityAssessment = useMemo(() => assessEquitySnapshot(snapshot, now), [snapshot, now]);
+  // Preflop analysis counts only players who raised or called, not everyone still dealt in.
+  const view = useMemo(() => (snapshot ? preflopView(snapshot) : null), [snapshot]);
+  const assessment = useMemo(() => assessSnapshot(view, now), [view, now]);
+  const equityAssessment = useMemo(() => assessEquitySnapshot(view, now), [view, now]);
   const inputRef = useRef<Parameters<typeof useEquity>[0]>(null);
-  if (equityAssessment.valid && snapshot)
+  if (equityAssessment.valid && view)
     inputRef.current = {
       hole: equityAssessment.hole,
       board: equityAssessment.board,
-      opponents: snapshot.opponents,
+      opponents: view.opponents,
       range: 'random',
-      opponentRanges: snapshot.seats
+      opponentRanges: view.seats
         .filter((p) => !p.hero && p.inHand)
         .map((p) => rangeFor(opponents.book.profiles[p.username || ''])),
       trials,
+      situation: situationFromSnapshot(view),
     };
   const equity = useEquity(inputRef.current);
   const decision = useMemo(
     () =>
-      snapshot && assessment.valid && equity.result
-        ? makePlan(snapshot, equity.result, opponents.book, now)
+      view && assessment.valid && equity.result
+        ? makePlan(view, equity.result, opponents.book, now)
         : null,
-    [snapshot, assessment.valid, equity.result, now, opponents.book],
+    [view, assessment.valid, equity.result, now, opponents.book],
   );
+  const manualRaise = useMemo(() => manualSize(view, decision), [view, decision]);
   useEffect(() => {
     window.river?.publishDecision(decision);
   }, [decision]);
@@ -101,6 +107,7 @@ export function useBrowserReader(trials: number) {
       reasoning: decision?.reasoning || [],
       intent: decision?.intent,
       target: decision?.target,
+      manualRaise,
       status: assessment.reason,
       storageError: opponents.error || journal.error,
     });
@@ -108,6 +115,7 @@ export function useBrowserReader(trials: number) {
     snapshot,
     display,
     decision,
+    manualRaise,
     journal.journal,
     opponents.book,
     now,
@@ -122,6 +130,7 @@ export function useBrowserReader(trials: number) {
     equityAssessment,
     equity,
     decision,
+    manualRaise,
     now,
     display,
     journal,

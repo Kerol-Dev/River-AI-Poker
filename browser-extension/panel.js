@@ -1,8 +1,6 @@
 (() => {
-  function create(shadow, { reset }) {
-    const style = document.createElement('style');
-    style.textContent = `.bar{width:340px!important;max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin}.minimized{width:auto!important}.minimized .reader-intent,.minimized .reader-cards,.minimized .reader-stats,.minimized .reader-analysis,.minimized .reader-performance,.minimized .reader-profiles{display:none}.reader-cards{display:grid;grid-template-columns:92px minmax(0,1fr);gap:16px;margin-top:18px;margin-bottom:3px;align-items:start}.reader-cards>div{min-width:0}.reader-label{font-size:8px;font-weight:750;color:#b9afa5;letter-spacing:1px;display:block;margin-bottom:9px}.reader-card-row{display:flex;gap:4px;align-items:center;min-height:64px}.reader-card{position:relative;flex:0 0 34px;width:34px;height:50px;background:linear-gradient(155deg,#fffaf0,#f4ede0);color:#1c1b1a;border:1px solid #fff9ed;border-radius:6px;box-shadow:0 2px 3px #0002;overflow:hidden}.reader-card.red{color:#cf4b42}.reader-card-rank{position:absolute;top:5px;left:5px;font:800 15px/1 -apple-system,BlinkMacSystemFont,Arial,sans-serif;letter-spacing:-.7px}.reader-card-suit{position:absolute;right:5px;bottom:6px;width:20px;height:20px;fill:currentColor}.reader-card.hero-card{flex-basis:44px;width:44px;height:64px;border-radius:7px}.hero-card .reader-card-rank{font-size:20px;top:6px;left:6px}.hero-card .reader-card-suit{width:26px;height:26px;right:6px;bottom:7px}.reader-card.empty{background:#ffffff03;border:1px solid #9b8e8026;box-shadow:none;color:#847668}.reader-card.empty:after{content:'';position:absolute;left:50%;top:50%;width:8px;height:1px;background:currentColor;transform:translate(-50%,-50%);opacity:.45}.reader-board-label{display:flex;align-items:center;justify-content:space-between;gap:4px}.reader-street{font-size:8px;font-weight:500;letter-spacing:0;color:#9b8d7f}.reader-stats{display:flex;justify-content:space-between;font-size:10px;padding:12px 0;border-bottom:1px solid #534f4a}.reader-stats b{display:block;font-size:15px;margin-top:5px}.reader-stats span{color:#b9b0a6}.reader-analysis,.reader-profiles{border-top:1px solid #56514c;margin-top:10px;padding-top:10px}.reader-analysis summary,.reader-profiles summary{font-size:11px;font-weight:750;cursor:pointer}.reader-analysis p,.reader-profile p{font-size:10px;line-height:1.6;color:#bdb4ab;margin:7px 0}.reader-performance{margin-top:12px;padding-top:12px;border-top:1px solid #56514c}.reader-perf-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.reader-net{font-size:25px;font-weight:850;letter-spacing:-.5px}.reader-perf-controls{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}.reader-perf-controls button,.reader-perf-controls select{font:700 9px -apple-system,sans-serif;color:#f4ede0;background:#433f3b;border:1px solid #6d6760;border-radius:5px;padding:6px;cursor:pointer}.reader-graph{width:100%;height:90px;display:block;cursor:crosshair;touch-action:none}.reader-graph:focus-visible{outline:2px solid #ff6b5b}.reader-tooltip{font-size:10px;background:#423e3b;padding:7px;border-radius:5px;min-height:28px;color:#f4ede0}.reader-profile{padding:10px 0;border-bottom:1px solid #4c4743}.reader-profile strong{font-size:12px;display:block;overflow-wrap:anywhere}.reader-profile span{font-size:10px;line-height:1.7;color:#c2bab1}.reader-event{font-size:9px;color:#b1a79c;margin-top:7px}.reader-intent{font-size:9px;color:#ffad9d;line-height:1.5;margin-top:7px}.reader-note{font-size:9px;color:#afa499;margin-top:5px}.auto-options{font-size:10px;line-height:1.6;margin:9px 0}.auto-options label{display:block;margin:5px 0}.auto-options input[type=checkbox]{vertical-align:middle}.auto-options select{background:#413e3a;color:#f4ede0;border:1px solid #69635d;border-radius:4px;margin-left:5px}.bar .hint{min-height:0;font-size:10px;margin-top:9px}.bar .advice{margin-top:9px;padding-top:9px;min-height:50px}.bar .action{font-size:30px}.bar .tools button{font-size:10px}.auto-status{position:sticky;bottom:0;background:#1c1b1a;padding:6px 0}.auto-stopped .auto-status{color:#ffb0a0;font-weight:800}`;
-    shadow.append(style);
+  function create(shadow, { reset, stepOpponents = null }) {
+    // Styles live in theme.js.
     const cards = document.createElement('section');
     cards.className = 'reader-cards';
     cards.innerHTML =
@@ -11,6 +9,21 @@
     const stats = document.createElement('section');
     stats.className = 'reader-stats';
     cards.after(stats);
+    // Opponents still in the hand. Built once so its buttons survive each refresh.
+    const opp = document.createElement('div');
+    opp.className = 'reader-opp';
+    opp.title = 'Players still in this hand besides you. It sets the win chance.';
+    opp.innerHTML =
+      '<span>Opponents</span><b><button data-d="-1" aria-label="One opponent fewer" hidden>−</button><span class="opp-n">—</span><button data-d="1" aria-label="One opponent more" hidden>+</button><small></small></b>';
+    const oppN = opp.querySelector('.opp-n'),
+      oppNote = opp.querySelector('small'),
+      oppButtons = opp.querySelectorAll('button');
+    oppButtons.forEach((b) =>
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (stepOpponents) oppN.textContent = String(stepOpponents(Number(b.dataset.d)));
+      }),
+    );
     const extra = document.createElement('div');
     extra.innerHTML =
       '<div class="reader-intent"></div><details class="reader-analysis"><summary>Decision breakdown</summary><div></div></details><section class="reader-performance"><div class="reader-perf-head"><div><span class="reader-label">SESSION NET · OBSERVED</span><strong class="reader-net">—</strong></div><div class="reader-perf-controls"><select aria-label="Graph interval"><option value="10">10 min</option><option value="60">1 hour</option></select><button id="chart-view">Net curve</button><button id="chart-reset" title="Start a fresh baseline; archive the previous session">Reset graph</button></div></div><svg class="reader-graph" viewBox="0 0 300 90" tabindex="0" role="img" aria-label="Session performance. Drag or use arrow keys to inspect."></svg><div class="reader-tooltip">Drag the chart to inspect time and result</div><div class="reader-note">Current hand settles at the next checkpoint.</div></section><details class="reader-profiles"><summary>Opponents & live actions</summary><div class="reader-profile-list"></div><div class="reader-event-list"></div></details>';
@@ -44,8 +57,10 @@
         w = 300,
         h = 90;
       svg.replaceChildren();
-      shadow.querySelector('.reader-net').textContent = p ? fmt(p.net, p.currency) : '—';
-      shadow.querySelector('.reader-net').style.color = p?.net < 0 ? '#ff9c8e' : '#f4ede0';
+      const net = shadow.querySelector('.reader-net');
+      net.textContent = p ? fmt(p.net, p.currency) : '—';
+      net.classList.toggle('up', !!p && p.net > 0);
+      net.classList.toggle('down', !!p && p.net < 0);
       const min = Math.min(0, ...pts.map((v) => v.net)),
         max = Math.max(0, ...pts.map((v) => v.net)),
         range = Math.max(100, max - min),
@@ -62,7 +77,7 @@
           x2: 292,
           y1: mode === 'curve' ? y(0) : 45,
           y2: mode === 'curve' ? y(0) : 45,
-          stroke: '#84766855',
+          style: 'stroke:var(--line-strong)',
           'stroke-dasharray': '3 4',
         }),
       );
@@ -71,8 +86,9 @@
           el('polyline', {
             points: pts.map((v, i) => `${x(v, i)},${y(v.net)}`).join(' '),
             fill: 'none',
-            stroke: p.net < 0 ? '#ff6b5b' : '#f4ede0',
+            style: `stroke:var(${p.net < 0 ? '--loss' : '--win'})`,
             'stroke-width': 2,
+            'stroke-linejoin': 'round',
           }),
         );
       if (mode === 'bars') {
@@ -86,7 +102,7 @@
               y: v.delta >= 0 ? 45 - bh : 45,
               width: Math.max(1, bw - 4),
               height: Math.max(1, bh),
-              fill: v.delta >= 0 ? '#f4ede0' : '#ff6b5b',
+              style: `fill:var(${v.delta >= 0 ? '--win' : '--loss'})`,
               rx: 2,
             }),
           );
@@ -96,7 +112,13 @@
         cursor = Math.max(0, Math.min(cursor, pts.length - 1));
         const v = pts[cursor];
         svg.append(
-          el('line', { x1: x(v, cursor), x2: x(v, cursor), y1: 4, y2: 86, stroke: '#ffad9d' }),
+          el('line', {
+            x1: x(v, cursor),
+            x2: x(v, cursor),
+            y1: 4,
+            y2: 86,
+            style: 'stroke:var(--accent)',
+          }),
         );
         tooltip.textContent = `${new Date(v.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · Net ${fmt(v.net, p.currency)}${mode === 'bars' ? ' · Period ' + fmt(v.delta, p.currency) : ''}`;
       } else
@@ -256,6 +278,16 @@
         d.append(l, b);
         stats.append(d);
       }
+      // Detected (Bet365 seats or visible face-down cards) shows a plain number; otherwise the
+      // player sets it here and River remembers it for this site.
+      const manual = !!stepOpponents && !!s && s.detection && !s.detection.opponentsDetected;
+      oppN.textContent = s?.opponents ? String(s.opponents) : '—';
+      oppNote.textContent = !s?.opponents ? '' : manual ? '' : 'auto';
+      oppButtons.forEach((b) => (b.hidden = !manual));
+      opp.title = manual
+        ? 'Players still in this hand besides you. This site hides their cards, so set it here.'
+        : 'Players still in this hand besides you, detected from the table.';
+      stats.append(opp);
       shadow.querySelector('.reader-intent').textContent = panel?.intent
         ? `${panel.intent.toUpperCase()}${panel.target != null ? ' · target ' + (s?.currency || '') + panel.target.toFixed(2) : ''}`
         : '';

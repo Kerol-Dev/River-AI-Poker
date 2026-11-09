@@ -22,8 +22,12 @@ try {
   await expect(page.locator('#read-tie')).toHaveText('4.0%');
   await expect(page.locator('#read-equity')).toHaveText('61%');
   await expect(page.locator('.action')).toContainText('Call');
+  await page.getByRole('button', { name: 'Use raise guidance' }).click();
+  await expect(page.locator('.action')).toHaveText('Raise to €0.78');
+  await expect(page.locator('.hint')).toContainText('Manual size: 50%');
+  await expect(page.locator('#result')).toHaveText('0 actions received');
   await page.getByRole('button', { name: 'Show opponent turn' }).click();
-  await expect(page.locator('.decision-kicker')).toHaveText('WIN CHANCE');
+  await expect(page.locator('.decision-kicker')).toHaveText('Win chance');
   await expect(page.locator('#read-win')).toHaveText('59.0%');
   await expect(page.locator('#read-tie')).toHaveText('4.0%');
   await page.setViewportSize({ width: 1000, height: 720 });
