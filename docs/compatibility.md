@@ -1,17 +1,17 @@
 # Compatibility and limits
 
-| Feature                | Current support                                                     | Limits                                                                                         |
-| ---------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| App and floating HUD   | macOS; local Apple Silicon build verified                           | Public signed/notarized builds are not yet provided.                                           |
-| Browser companion      | Chrome MV3, observed Bet365 Hold’em client                          | DOM layouts may change. Not affiliated with or endorsed by the operator.                       |
-| Screen capture and OCR | Selectable macOS app windows, browser windows or displays           | Beta. Screen Recording permission required. Protected or unavailable windows may not capture.  |
-| Cards in OCR mode      | Explicit rank + suit symbols or letters                             | Stylised or ambiguous suits are rejected. Colour alone never identifies a suit.                |
-| OCR mapping            | Suggested label regions, drag-to-draw/move, import/export           | Suggestions are drafts. Recheck after resize, zoom, layout changes or window replacement.      |
-| OCR table context      | Manually selected street and opponent count                         | Set them for the current hand. No automatic session accounting or username profiling from OCR. |
-| Amounts in OCR mode    | One nonnegative decimal amount; optional € / £ / $; comma thousands | Decimal commas and mixed amounts require manual review.                                        |
-| OCR decisions          | Hold’em call/check/fold comparison against unknown ranges           | No clicks, automatic sizing, side-pot solving or all-in advice.                                |
-| Browser automation     | User-started runs on the supported adapter                          | Explicit caps, visibility and fresh-state checks. No universal automation claim.               |
-| Other games            | Architecture prepared for separate engines                          | Blackjack is not available yet.                                                                |
+| Feature                | Current support                                                                | Limits                                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App and floating HUD   | macOS 12+ (Apple silicon and Intel) and Windows 10/11 (64-bit)                 | Builds are not notarised or code-signed yet. Windows is verified in CI, not on physical PCs yet.                                                   |
+| Browser companion      | Chrome MV3: Bet365 Hold’em client, plus any site you turn on                   | Any-site detection needs readable cards in the page (text, labels, image or class names). Canvas tables need the Screen reader.                    |
+| Screen capture and OCR | Selectable app windows, browser windows or displays                            | Beta. macOS needs Screen Recording permission; Windows uses its built-in OCR language. Protected windows may not capture.                          |
+| Cards in OCR mode      | Automatic: card faces found by shape, rank and suit read from the corner index | Very stylised decks, dark card faces or cards without a corner index may not be read. Colour alone never decides between suits of the same colour. |
+| OCR mapping            | Automatic by default; manual maps with drag-to-draw, import/export             | Recheck manual maps after resize, zoom or layout changes.                                                                                          |
+| OCR table context      | Street from the board (automatic mode); opponent count set by you              | No automatic session accounting or username profiling from OCR.                                                                                    |
+| Amounts in OCR mode    | One nonnegative decimal amount; optional € / £ / $; comma thousands            | Decimal commas and mixed amounts require manual review.                                                                                            |
+| OCR decisions          | Hold’em call/check/fold comparison against unknown ranges                      | No clicks, automatic sizing, side-pot solving or all-in advice.                                                                                    |
+| Browser automation     | User-started runs on the supported adapter                                     | Explicit caps, visibility and fresh-state checks. No universal automation claim.                                                                   |
+| Other games            | Architecture prepared for separate engines                                     | Blackjack is not available yet.                                                                                                                    |
 
 “Any app” means that the screen reader can accept a selectable window without needing that app’s DOM. It does **not** mean every table design can be recognised correctly. River shows what it read and withholds guidance when required fields fail validation. It cannot detect every confident OCR mistake. Always inspect the reading.
 

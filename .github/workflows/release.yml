@@ -1,24 +1,51 @@
 name: Release River
-# Push a tag such as v1.6.0 (or run manually with a tag) to build and publish:
-# macOS .dmg (Apple Silicon and Intel), Windows setup .exe and the Chrome extension .zip.
+# Push a tag such as v1.6.0 (or run manually with a tag) to build and publish the release.
+# The release is created first; each build then uploads its own file as soon as it is ready:
+# macOS .dmg (Apple silicon and Intel), Windows setup .exe and the Chrome extension .zip.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag, for example v1.6.0
+        description: Existing release tag, for example v1.6.0
         required: true
 permissions:
   contents: write
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+  GH_TOKEN: ${{ github.token }}
 jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - name: Create the GitHub release
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 ||
+            gh release create "$TAG" --verify-tag --title "River ${TAG#v}" --notes-file docs/release-notes.md
+  extension:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - run: node scripts/package-extension.mjs
+      - run: gh release upload "$TAG" release/*-chrome-extension.zip --clobber
   mac:
+    needs: release
     strategy:
+      fail-fast: false
       matrix:
         arch: [arm64, x64]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -28,19 +55,20 @@ jobs:
       - run: npm run package:mac
         env:
           RIVER_ARCH: ${{ matrix.arch }}
+      # Launch the packaged app and exercise it (the runner is Apple silicon).
       - if: matrix.arch == 'arm64'
-        run: node tests/package.mjs && npm run package:extension
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mac-${{ matrix.arch }}
-          path: |
-            release/*.dmg
-            release/*.zip
-          if-no-files-found: error
+        run: node tests/package.mjs
+      - run: gh release upload "$TAG" release/*.dmg --clobber
   windows:
+    needs: release
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -53,30 +81,6 @@ jobs:
         run: |
           if (-not (Test-Path 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe')) { choco install innosetup -y --no-progress }
       - run: npm run package:win
-      # Launch the packaged Windows app and exercise it before publishing.
+      # Launch the packaged Windows app and exercise it before uploading.
       - run: node tests/package.mjs
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows
-          path: release/*.exe
-          if-no-files-found: error
-  publish:
-    needs: [mac, windows]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          path: assets
-          merge-multiple: true
-      - name: Publish GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag || github.ref_name }}
-        run: |
-          ls -la assets
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" assets/* --clobber
-          else
-            gh release create "$TAG" assets/* --title "River ${TAG#v}" --notes-file docs/release-notes.md
-          fi
+      - run: gh release upload "$TAG" release/*-windows-setup.exe --clobber

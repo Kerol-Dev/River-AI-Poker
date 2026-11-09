@@ -306,8 +306,10 @@ describe('actual amount-entry path on synthetic tables', () => {
     assert.equal(w.RiverBetSizing.prepare(doc.querySelector('.single-actions'), 2), true);
     // Synchronous tick 0 cannot commit because React 18 batches focus+input+blur
     assert.equal(betBtn.textContent, 'Bet €1');
-    // Wait for the staged macrotask commit (focus -> input -> blur across separate ticks)
-    await new Promise((r) => setTimeout(r, 120));
+    // Wait for the staged macrotask commit (focus -> input -> blur across separate ticks).
+    // Slower machines (Windows CI) need longer than the usual ~100 ms.
+    for (let t = 0; t < 2000 && (betBtn.textContent as string) !== 'Bet €2'; t += 20)
+      await new Promise((r) => setTimeout(r, 20));
     assert.equal(betBtn.textContent, 'Bet €2');
     assert.equal(input.value, '€2');
     dom.window.close();

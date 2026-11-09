@@ -4,5 +4,9 @@ export const platform: string =
     (window as { river?: { platform?: string } }).river?.platform) ||
   'web';
 export const isWindows = platform === 'win32';
-export const deviceName = isWindows ? 'this PC' : 'your Mac';
-export const osName = isWindows ? 'Windows' : 'macOS';
+export const deviceName = isWindows
+  ? 'this PC'
+  : platform === 'darwin'
+    ? 'your Mac'
+    : 'this computer';
+export const osName = isWindows ? 'Windows' : platform === 'darwin' ? 'macOS' : 'Desktop';

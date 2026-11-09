@@ -80,7 +80,7 @@
       ? 'Automatic run active'
       : stopped
         ? 'Auto stopped · restart in Settings'
-        : 'Hold’em · analysis on your Mac';
+        : 'Hold’em · analysis on your computer';
   }
   function mount(root) {
     const bar = root.querySelector('.bar'),
@@ -216,7 +216,7 @@
     const footer = document.createElement('footer');
     footer.className = 'river-footer';
     footer.innerHTML =
-      '<span>Hold’em · analysis on your Mac</span><button hidden>Stop auto</button>';
+      '<span>Hold’em · analysis on your computer</span><button hidden>Stop auto</button>';
     footer.querySelector('button').onclick = () => root.querySelector('#auto-stop').click();
     bar.append(footer);
     const notice = document.createElement('p');

@@ -1,167 +1,152 @@
 <p align="center"><img src="docs/assets/river-hero.svg" alt="River: See the hand. Understand the move." width="100%"></p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache_2.0-f4ede0?style=flat-square&labelColor=1c1b1a"></a>
-  <img alt="Platform: macOS" src="https://img.shields.io/badge/platform-macOS-f4ede0?style=flat-square&labelColor=1c1b1a">
-  <img alt="Screen reader: beta" src="https://img.shields.io/badge/screen_reader-beta-ff6b5b?style=flat-square&labelColor=1c1b1a">
-  <a href="https://github.com/kerol-dev/river/actions"><img alt="Validate River" src="https://github.com/kerol-dev/river/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/Kerol-Dev/river/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Kerol-Dev/river?style=flat-square&color=1d6fe0&labelColor=0f1720"></a>
+  <img alt="Platforms: macOS and Windows" src="https://img.shields.io/badge/platforms-macOS_%7C_Windows-1d6fe0?style=flat-square&labelColor=0f1720">
+  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache_2.0-1d6fe0?style=flat-square&labelColor=0f1720"></a>
+  <a href="https://github.com/Kerol-Dev/river/actions/workflows/ci.yml"><img alt="Validate River" src="https://github.com/Kerol-Dev/river/actions/workflows/ci.yml/badge.svg"></a>
 </p>
 
-<p align="center"><strong>Your hand. Your next move. Your session.<br>A small, private companion that keeps the important things in view.</strong></p>
+<p align="center"><strong>Your hand. Your next move. Your session.<br>A private Hold’em companion for macOS and Windows that keeps the important things in view.</strong></p>
 
-<p align="center"><a href="#get-started">Get started</a> · <a href="docs/getting-started.md">Setup guide</a> · <a href="docs/compatibility.md">Compatibility</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
+<p align="center"><a href="#download">Download</a> · <a href="docs/getting-started.md">Setup guide</a> · <a href="docs/compatibility.md">Compatibility</a> · <a href="CONTRIBUTING.md">Contribute</a></p>
 
 ---
 
-## A quieter way to play and study
+River reads the poker table you are looking at, works out your win chance and the price of each decision, and explains its suggestion in plain words. It runs on **macOS and Windows**, connects to Chrome for browser tables, and reads any other window with local screen recognition.
 
-River combines a compact browser companion, a floating macOS HUD, a local Hold’em simulator and a mapped screen reader. It uses **warm charcoal `#1C1B1A`**, cream and coral, with clear card faces and plain-language explanations.
+**Everything runs on your computer.** No cloud OCR, accounts, hidden-card access or telemetry. The only network connection is between the Chrome extension and the River app on `127.0.0.1`.
 
-**All calculation and OCR happen on your Mac.** No cloud OCR, account credentials, hidden-card access or telemetry.
+<p align="center"><img src="docs/assets/app.png" alt="River’s Browser table view in the light theme, using sample data" width="100%"></p>
+
+## Download
+
+Get the files from the **[latest release](https://github.com/Kerol-Dev/river/releases/latest)**:
+
+| File                                   | For                                    |
+| -------------------------------------- | -------------------------------------- |
+| `River-<version>-mac-arm64.dmg`        | Macs with Apple silicon (M1 and later) |
+| `River-<version>-mac-x64.dmg`          | Intel Macs                             |
+| `River-<version>-windows-setup.exe`    | Windows 10 and 11 (64-bit)             |
+| `River-<version>-chrome-extension.zip` | The Chrome table companion             |
+
+- **macOS:** open the `.dmg` and drag River to Applications. Builds are not notarised yet, so the first time right-click River → **Open** → **Open**.
+- **Windows:** run the setup. It installs for your user only, without an administrator prompt. The installer is not code-signed yet, so if SmartScreen warns choose **More info** → **Run anyway**. Closing the window keeps River in the notification area; quit it from the tray icon.
+- **Chrome:** unzip the extension, open `chrome://extensions`, turn on **Developer mode**, choose **Load unpacked** and select the `browser-extension` folder. Then pair it with the code from River → **Browser table → Connection**.
+
+## Three ways to read a table
 
 <table>
-<tr><td width="54%">
+<tr><td width="58%">
 
-### Everything has its place
+### Browser companion
 
-- **Table:** readable cards, estimated win chance and the next decision. Win chance stays visible during opponents’ turns while the hand remains readable.
-- **Players:** patterns from observed play, with uncertainty made explicit.
-- **Session:** scrub the graph, compare 10-minute/hourly P/L, or start a fresh baseline without deleting history.
-- **Settings:** mapping and optional bounded automatic runs.
+A compact panel beside your table in Chrome, with **Table**, **Players**, **Session** and **Settings** pages.
 
-The default reader view fits without scrolling at normal desktop heights. Details are available when you need them.
+- **Bet365** is read automatically with a dedicated reader: seats, players, bets, timers and sizing.
+- **Any other site:** click the River button and choose **Use River on this site**. River finds your cards, the board, the pot, the live buttons and opponents’ face-down hands by itself. It understands cards written as text, labels, image names and card classes. Drag a marker to correct anything it gets wrong.
+- Win chance, tie chance, pot share and the price to call stay visible while others act.
 
-</td><td width="46%"><img src="docs/assets/companion.png" alt="River’s compact Table tab using synthetic sample data" width="100%"></td></tr>
+</td><td width="42%"><img src="docs/assets/companion.png" alt="The River panel in the light theme with cards, pot, opponents and win chance" width="100%"></td></tr>
 </table>
 
-## Two ways to connect
+### Screen reader
 
-|             | Browser adapter                                       | Screen reader · beta                                          |
-| ----------- | ----------------------------------------------------- | ------------------------------------------------------------- |
-| Input       | Visible elements in the supported Hold’em client      | A selected macOS app, browser window or display               |
-| Setup       | Pair Chrome, then map table elements                  | Choose a window, review suggested regions, drag to adjust     |
-| Recognition | Client-specific card and action parsing               | Local Apple Vision OCR with confidence and consistency checks |
-| Guidance    | Equity, call price, suggested sizing, observations    | Card equity and call/check/fold comparison after validation   |
-| Actions     | Optional user-started automation with explicit limits | Guidance only; no clicks or bet entry                         |
+For tables drawn as a single image, or in another app entirely. Choose a window and River does the rest in **Automatic** mode: it finds face-up cards by their shape, reads each rank, identifies each suit by colour and shape (including four-colour decks), sets the street from the board, and reads the pot and buttons from on-screen text. **Manual map** is there for unusual layouts.
 
-The current browser adapter targets the observed Bet365 Hold’em web client. **Screen capture is not tied to Bet365**, but recognition depends on the table design. Stylised suits, unclear amounts, protected windows and side pots can require manual review. River warns instead of filling gaps with guesses. See the [compatibility matrix](docs/compatibility.md).
+Text recognition uses **Apple Vision** on macOS and the **built-in Windows OCR** on Windows. Card detection is the same on both.
 
-<img src="docs/assets/screen-reader.png" alt="River screen mapping workflow, shown with a generated sample table and preview readings" width="100%">
+<img src="docs/assets/screen-reader.png" alt="River’s Screen reader in Automatic mode, reading a generated sample table" width="100%">
 
-_Screenshots use generated sample data. The OCR UI preview uses a mock source; the native recognition engine is separately exercised on generated image fixtures._
+### Desktop app
 
-## macOS and Windows
+- **Floating HUD** that stays above your table window.
+- **Hand lab** to explore boards, ranges and up to five opponents without a live table.
+- **Practice table:** heads-up no-limit Hold’em against a statistical opponent, with fake chips.
+- **Session history** with a scrubbable graph, 10-minute and hourly results, cash-flow corrections and JSON export.
 
-River runs on macOS 12+ and Windows 10/11. Download the `.dmg` or the Windows setup `.exe` and the Chrome extension `.zip` from the [latest release](https://github.com/Kerol-Dev/river/releases/latest). Screen reading uses Apple Vision on macOS and the built-in Windows text recognition on Windows; card detection works the same on both.
+## How River decides
 
-## Any site
+- **Preflop** uses starting-hand ranges for the situation: nobody has raised, players limped, someone raised, or the pot is re-raised. Only players who actually raised or called count as opponents; players yet to act and posted blinds do not. For example, AQo raises first in and calls a single raise. If a call would commit a large part of your stack, only the strongest hands continue.
+- **After the flop** River compares your equity, weighted by how opponents have bet, with the price of calling, then applies extra caution for weak made hands and draws.
+- **Every suggestion is explained**, with the reasoning one click away. These are transparent heuristics, not a solver, and there is no guarantee of profit.
 
-The Table companion runs on Bet365 automatically and on any other site you turn it on for from its toolbar button. It detects cards, the board, pot and buttons without a map. For tables drawn as one image, River's Screen reader finds cards by shape in Automatic mode. See the [companion guide](browser-extension/README.md).
+## New in 1.6
 
-## Get started
-
-### Develop locally
-
-Requires **Node 24**. The macOS app’s OCR helper also requires **Xcode Command Line Tools** to build.
-
-```sh
-git clone https://github.com/kerol-dev/river.git
-cd river
-npm ci
-
-# Build the local Apple Vision helper, then open the app.
-npm run build:ocr
-npm start
-```
-
-The repository is currently private; cloning requires access. The source is licensed under Apache-2.0.
-
-For the web practice interface:
-
-```sh
-npm run dev
-```
-
-For a standalone macOS development build:
-
-```sh
-npm run package:mac
-```
-
-The app appears in `release/River-darwin-<architecture>/River.app`. Packaged users do not need Node or Swift. Builds are locally signed for development; a public Developer ID signed and notarized distribution is not yet provided.
-
-### Connect Chrome
-
-1. Load `browser-extension/` unpacked through Chrome’s extension manager.
-2. In River, open **Browser table → Connection** and copy the pairing code.
-3. Paste it into the extension, choose **Connect to River**, then **Start reader**.
-4. Refresh the supported table between hands. Use the reader’s **Settings** tab to review mapping.
-
-For another app, choose **Screen reader** in River. Select a window, review the suggested regions, set the current street and opponent count, confirm the map and start reading. macOS Screen Recording permission is required. The [setup guide](docs/getting-started.md) covers mapping, updates and troubleshooting.
-
-## New in 1.5: review the assumption, not just the percentage
-
-Hand Lab now compares a starting range, an action-weighted range, a tighter stress scenario, and a stronger continuing range. Try the built-in **Counterfeited pair** and **High card facing a raise** examples, then compare them with a guaranteed split or strong draw. Outright wins, ties and estimated pot share are shown separately.
-
-Heads-up river results enumerate every compatible opposing hand for each assumed range. Earlier streets use stable Monte Carlo samples. A visible, adjustable policy reserve is separate from sampling uncertainty. These are **uncalibrated study heuristics**, not a solver, professional playing system or profit forecast. Read the [study model notes](docs/study-model.md).
-
-This model is isolated to offline Hand Lab. The existing live decision engine and wagering controls are unchanged by this release. The compact reader and macOS HUD receive clearer outcome labels only.
-
-## Built for understanding
-
-- **Win chance before your turn.** Fresh, valid cards are analysed independently of whether action buttons are available. Ties and equity remain separate concepts: win chance is the probability of winning outright; equity includes your share of ties.
-- **Transparent analysis.** Monte Carlo equity against unknown or labelled heuristic ranges, readable pot odds and explanations. No claim of GTO or guaranteed profit.
-- **Stable cards.** Brief animations retain the last confirmed display without authorising stale actions.
-- **Visible player patterns.** Local observations keyed by public usernames. Hidden-card bluff intent is never invented.
-- **Session history.** Stable hand-boundary balances, cash-flow adjustments, archived resets and JSON export.
-- **A private practice table.** Heads-up no-limit Hold’em with legal action bounds, split pots, all-in runouts and a statistical opponent.
-- **A hand lab.** Explore boards, ranges and up to five opponents without a live table.
+- **Windows 10 and 11:** native Windows 11 title bar, notification-area icon and Windows text recognition.
+- **Any site** in the Chrome companion, with automatic table detection and a cleaner panel and popup.
+- **Automatic Screen reader** that finds cards by shape instead of needing a drawn map.
+- **Better preflop decisions** from starting-hand ranges.
+- **New design:** a cool slate and blue palette with **light and dark themes**. Choose System, Light or Dark in Preferences, the extension popup or the panel’s Settings page.
 
 ## Confidence before action
 
-OCR mode requires mapped fields, exact readable ranks and suits, valid amounts and consistent frames. Uncertain reads pause guidance. A high OCR confidence score is not proof that a card is correct; review the detected state before acting.
+River pauses rather than guessing. Guidance needs fresh, readable cards and amounts, and two matching readings in a row. Unusual card designs, hidden windows, side pots and all-in spots may need your own review.
 
-Browser automatic mode is off by default. The user starts each bounded run with action, spend and duration limits. River rechecks the state immediately before one submission and stops if the client does not acknowledge it. It does not log in, join tables, buy chips or resume an inactive seat. Live automatic wagers are not part of the project’s automated verification. Use assistance only where the service permits it.
+Bet365 also offers an optional automatic mode that you start yourself with action, spending and time limits. It is off by default and is never available on other sites. Many real-money poker services prohibit assistance tools and automated play, so check the rules of the service you use.
 
-## Under the hood
+## Build from source
 
-```text
-src/engine/          Hold’em rules, evaluation and equity worker
-src/study/           Isolated offline range comparisons and hand review
-src/reader/          Browser validation, observations and accounting
-src/screen/          Window mapping and conservative OCR parsing
-browser-extension/  Scoped client adapter and compact companion
-native/             Local Apple Vision text recognition
-electron/           Sandboxed app, authenticated bridge and capture IPC
+Requires **Node 24**. On macOS the screen-reading helper also needs the **Xcode Command Line Tools**.
+
+```sh
+git clone https://github.com/Kerol-Dev/river.git
+cd river
+npm ci
+npm start        # build and open River (macOS: run `npm run build:ocr` once first)
+npm run dev      # web preview of the interface
 ```
 
-Read the [architecture notes](docs/architecture.md), [privacy and security notes](SECURITY.md), and [contribution guide](CONTRIBUTING.md).
+Load `browser-extension/` unpacked in Chrome to use your local copy of the extension.
+
+### Package and release
+
+```sh
+npm run package:mac        # .app and .dmg in release/ (RIVER_ARCH=arm64 or x64)
+npm run package:win        # Windows app and setup .exe (needs Inno Setup 6)
+npm run package:extension  # Chrome extension .zip
+```
+
+Pushing a `v*` tag runs the release workflow. It creates the GitHub release, then each build uploads its own file as soon as it is ready: both `.dmg` files, the Windows setup `.exe` and the extension `.zip`.
 
 ### Verify a change
 
 ```sh
-npm test
+npm test               # unit tests (both platforms)
 npm run build
 npm run release:check
-
-# macOS: exercise real OCR on a generated image and mapped crop.
-npm run build:ocr
-npm run test:ocr
+npm run test:ocr       # macOS: Apple Vision text and card detection on generated tables
+npm run test:ocr:windows  # Windows: Windows OCR on a generated table
 ```
 
-Tests cover evaluation, chip conservation, reader confidence, all-in label handling, stale-state rejection, bounded automation on synthetic tables, session accounting, card presentation and OCR parsing. CI validates the app on Linux and macOS and runs native OCR checks on macOS. Coverage of one client or fixture does not establish compatibility with every poker room.
+CI runs on Linux, macOS and Windows. The release workflow also launches the packaged macOS and Windows apps before uploading them. Passing fixtures does not prove compatibility with every poker room.
+
+## Under the hood
+
+```text
+src/engine/           Hold’em rules, evaluation and equity worker
+src/reader/           Live decisions, preflop ranges, observations and session accounting
+src/screen/           Screen reader: automatic reading and manual maps
+src/study/            Offline range comparisons and hand review
+browser-extension/    Bet365 reader, any-site reader, panel, popup and themes
+electron/             Sandboxed app, local bridge, screen capture and card detection
+native/               Apple Vision helper (macOS) and Windows OCR script
+```
+
+Read the [architecture notes](docs/architecture.md), [privacy and security notes](SECURITY.md) and [contribution guide](CONTRIBUTING.md).
 
 ## What’s next
 
-- More card-layout fixtures and community-contributed mappings.
-- Broader screen-recognition validation across app designs.
-- Signed and notarized public macOS releases.
-- **Blackjack**, with its own rule variants and strategy engine, reusing the capture and mapping layers. It is not implemented in this release.
+- Position-aware preflop ranges.
+- More card designs and table layouts in the test fixtures.
+- Signed and notarised macOS builds and a signed Windows installer.
 
 ## Attribution and license
 
 Created by **[kerol-dev](https://github.com/kerol-dev)** with River contributors.
 
-River is licensed under the **[Apache License 2.0](LICENSE)**. When distributing forks or derivatives, preserve the relevant license, copyright and [NOTICE](NOTICE) attribution as the license requires. These notices may be retained in documentation or legal notices; the license does not require a promotional banner on every screen.
+River is licensed under the **[Apache License 2.0](LICENSE)**. When distributing forks or derivatives, preserve the license, copyright and [NOTICE](NOTICE) attribution as the license requires.
 
-Third-party dependencies retain their own licenses. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). River is independent and is not affiliated with the operators of supported poker clients.
+Third-party dependencies keep their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). River is independent and is not affiliated with any poker operator.
+
+_Screenshots use generated sample data._
