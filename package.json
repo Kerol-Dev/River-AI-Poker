@@ -1,6 +1,6 @@
 {
   "name": "river-holdem-studio",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "A private, local-first macOS Hold’em companion with a compact browser HUD and mapped screen OCR.",
   "main": "electron/main.cjs",
   "directories": {

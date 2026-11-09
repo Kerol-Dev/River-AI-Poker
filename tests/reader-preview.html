@@ -96,6 +96,7 @@
     <h1>River · sample table</h1>
     <p class="notice">SYNTHETIC TABLE · FAKE CHIPS · NO NETWORK OR WAGERS</p>
     <button id="toggle-turn">Show opponent turn</button>
+    <button id="raise-guidance">Use raise guidance</button>
     <div id="result">0 actions received</div>
     <div class="hand-id">#123456789</div>
     <div class="table">
@@ -134,6 +135,7 @@
         <div class="game-position game-position-1"><div class="dealer">D</div></div>
       </div>
       <div class="table-actions-wrapper">
+        <label>Raise amount<input class="betting-input" value="€0.24" /></label>
         <div class="actions-area single-actions">
           <div class="base-button action-button">Fold</div>
           <div class="base-button action-button">Call €0.12</div>
@@ -143,7 +145,8 @@
     </div>
     <script>
       let clickCount = 0,
-        graphReset = false;
+        graphReset = false,
+        raiseGuidance = false;
       const start = Date.now() - 3600000;
       const points = [0, 60, 20, 180, 135, 260, 245, 410, 330, 520, 480, 640, 585].map(
         (net, i) => ({ at: start + i * 300000, net }),
@@ -190,6 +193,27 @@
         intent: 'call',
       });
 
+      document.querySelector('#raise-guidance').onclick = () => {
+        raiseGuidance = !raiseGuidance;
+        document.querySelector('#raise-guidance').textContent = raiseGuidance
+          ? 'Use call guidance'
+          : 'Use raise guidance';
+      };
+      const amountInput = document.querySelector('.betting-input');
+      let entered = null;
+      amountInput.addEventListener('focus', () => {
+        amountInput.value = amountInput.value.replace('€', '');
+      });
+      amountInput.addEventListener('input', () => {
+        entered = /^\d+\.\d{2}$/.test(amountInput.value) ? Number(amountInput.value) : null;
+      });
+      amountInput.addEventListener('blur', () => {
+        if (entered !== null) {
+          document.querySelectorAll('.action-button')[2].textContent =
+            'Raise To €' + entered.toFixed(2);
+          amountInput.value = '€' + entered.toFixed(2);
+        }
+      });
       document.querySelector('#toggle-turn').onclick = () => {
         const actions = document.querySelector('.single-actions');
         actions.style.display = actions.style.display === 'none' ? '' : 'none';
@@ -223,8 +247,9 @@
                     ? null
                     : {
                         key: s.key,
-                        action: 'Call',
-                        amount: s.call,
+                        action: raiseGuidance ? 'Raise' : 'Call',
+                        target: raiseGuidance ? 0.68 : undefined,
+                        amount: raiseGuidance ? 0.68 : s.call,
                         equity: 0.61,
                         threshold: 0.107,
                         explanation: 'Synthetic test decision. No real wager is possible.',
@@ -238,6 +263,7 @@
       };
     </script>
     <script src="../browser-extension/adapter.js"></script>
+    <script src="../browser-extension/bet-sizing.js"></script>
     <script src="../browser-extension/autoplay.js"></script>
     <script src="../browser-extension/interface.js"></script>
     <script src="../browser-extension/panel.js"></script>

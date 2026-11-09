@@ -594,7 +594,7 @@ function Studio() {
           </button>
           <div className="sidebar-version">
             <span className="dot green" />
-            River 1.4.0<span>macOS ready</span>
+            River 1.4.1<span>macOS ready</span>
           </div>
         </div>
       </aside>

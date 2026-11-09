@@ -47,6 +47,21 @@
         };
     }
   }
+  function automation(root, status) {
+    if (!status) return;
+    const notice = root.querySelector('.auto-notice'),
+      footer = root.querySelector('.river-footer');
+    if (!notice || !footer) return;
+    const stopped = !status.running && status.reason !== 'Manual mode';
+    notice.hidden = !stopped;
+    notice.textContent = stopped ? 'Auto stopped: ' + status.reason : '';
+    footer.querySelector('button').hidden = !status.running;
+    footer.querySelector('span').textContent = status.running
+      ? 'AUTOMATIC RUN ACTIVE'
+      : stopped
+        ? 'AUTO STOPPED · RESTART IN SETTINGS'
+        : 'HOLD’EM · ON YOUR MAC';
+  }
   function mount(root) {
     const bar = root.querySelector('.bar'),
       header = root.querySelector('.header'),
@@ -152,6 +167,13 @@
     footer.innerHTML = '<span>HOLD’EM · ON YOUR MAC</span><button hidden>STOP AUTO</button>';
     footer.querySelector('button').onclick = () => root.querySelector('#auto-stop').click();
     bar.append(footer);
+    const notice = document.createElement('p');
+    notice.className = 'auto-notice';
+    notice.setAttribute('role', 'status');
+    notice.hidden = true;
+    notice.style.cssText =
+      'font-size:11px;line-height:1.5;color:#ffb3a4;margin:0 0 12px;padding:10px;border:1px solid #ff6b5b44;border-radius:8px;background:#ff6b5b0b';
+    tabs.after(notice);
     tabs.children[0].click();
     return {
       refresh(panel, s, decision) {
@@ -163,11 +185,7 @@
           Date.now() - panel.at < 3500 &&
           !s.errors?.length;
         const current = fresh ? panel : null;
-        const active = s?.automation?.running;
-        footer.querySelector('button').hidden = !active;
-        footer.querySelector('span').textContent = active
-          ? 'AUTOMATIC RUN ACTIVE'
-          : 'HOLD’EM · ON YOUR MAC';
+        automation(root, s?.automation);
         const c = copy(decision, s);
         surface.querySelector('.decision-subtitle').textContent = decision ? c.title : '';
         if (decision) hint.textContent = c.body;
@@ -200,5 +218,5 @@
       },
     };
   }
-  globalThis.RiverInterface = { mount, copy };
+  globalThis.RiverInterface = { mount, copy, automation };
 })();

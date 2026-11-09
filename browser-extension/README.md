@@ -2,7 +2,7 @@
 
 Load this folder through Chrome → Extensions → Manage extensions → Developer mode → Load unpacked. Pair with the code from River → Browser table → Connection. The supported frame is `https://update-com.p365play.com/html5/*`; the only network destination is the local River bridge on `127.0.0.1:17864`.
 
-After updating, reload this extension and refresh the poker tab between hands. Chrome’s extension manager must show **1.4.0**; the reader now has Table, Players, Session and Settings tabs. Restart River to load its new interface, then copy its new pairing code. Loading an extension does not update already-injected scripts.
+After updating, reload this extension and refresh the poker tab between hands. Chrome’s extension manager must show **1.4.1**; the reader now has Table, Players, Session and Settings tabs. Restart River to load its new interface, then copy its new pairing code. Loading an extension does not update already-injected scripts.
 
 ## Manual and automatic modes
 
@@ -29,3 +29,11 @@ Card faces use vector suits and keep unchanged card nodes between readings. Esti
 A primary All In button is recognised as a call only when its amount equals the visible remaining stack and the opposing wager covers that stack. Heads-up pot odds exclude unmatched excess. Ambiguous amounts and unresolved multiway side pots pause with explicit reasons. All-in sizing presets are never treated as calls.
 
 For other apps and browser rooms, use **Screen reader** in the macOS app. It supports selected-window capture, draggable regions and local OCR. This extension remains scoped to its supported browser client; screen mode gives guidance only. See the [compatibility guide](../docs/compatibility.md).
+
+## 1.4.1: amount entry and automatic-run status
+
+Bet and raise amounts now use the field’s focus → decimal entry → input/change → blur edit cycle. River waits for the primary action button to echo the exact requested total; a clamped or unconfirmed value never authorises submission. The input editor does not press Enter or submit a form.
+
+Briefly missing pot labels or seat details pause the run for up to 3.5 seconds instead of immediately reporting a different table. A fresh matching table reading starts a new action countdown. A confirmed identity change, prolonged unreadability, hidden tab, disconnection, sitting out or exhausted limit still stops the run. The original stop reason stays visible across the companion’s tabs until the next explicit start.
+
+Validation includes the real entry helper against synthetic controlled fields and a fake-chip Chrome run. It does not establish live-client wager execution.

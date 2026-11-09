@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "River \u00b7 Table companion",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "A private Hold\u2019em companion with clear decisions, player observations and session charts. Pair with the River macOS app.",
   "permissions": ["storage"],
   "host_permissions": ["http://127.0.0.1:17864/*"],
@@ -19,7 +19,14 @@
     {
       "matches": ["https://update-com.p365play.com/html5/*"],
       "all_frames": true,
-      "js": ["adapter.js", "autoplay.js", "interface.js", "panel.js", "content.js"],
+      "js": [
+        "adapter.js",
+        "bet-sizing.js",
+        "autoplay.js",
+        "interface.js",
+        "panel.js",
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ]

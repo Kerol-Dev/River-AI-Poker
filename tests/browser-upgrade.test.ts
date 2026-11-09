@@ -370,3 +370,42 @@ describe('automatic timing and sizing regressions on fake chips', () => {
     assert.equal(c.status().spent, 48);
   });
 });
+
+describe('automatic pauses and stop explanations', () => {
+  it('pauses during a brief blank pot/seat reading and restarts the action countdown', () => {
+    const f = autoFixture();
+    f.controller.start({ perAction: 1, budget: 5, actions: 10 });
+    f.tick();
+    f.advance(800);
+    const original = f.s;
+    f.s = { ...original, currency: '', seats: [], handId: '' };
+    f.tick();
+    assert.equal(f.controller.status().running, true);
+    assert.match(f.controller.status().reason, /refreshes/);
+    assert.equal(f.clicks.length, 0);
+    f.advance(500);
+    f.s = original;
+    f.tick();
+    assert.equal(f.clicks.length, 0);
+    f.advance(899);
+    f.tick();
+    assert.equal(f.clicks.length, 0);
+    f.advance(1);
+    f.tick();
+    assert.equal(f.clicks.length, 1);
+  });
+  it('stops on prolonged missing identity and preserves that first reason', () => {
+    const f = autoFixture();
+    f.controller.start({ perAction: 1, budget: 5, actions: 10 });
+    f.s = { ...f.s, currency: '' };
+    f.tick();
+    f.advance(3500);
+    f.tick();
+    assert.equal(f.controller.status().running, false);
+    const reason = f.controller.status().reason;
+    assert.match(reason, /unreadable/);
+    f.controller.stop('Another event');
+    assert.equal(f.controller.status().reason, reason);
+    assert.equal(f.clicks.length, 0);
+  });
+});

@@ -24,10 +24,12 @@
       limits,
       candidate = null,
       awaiting = null,
-      sizing = null;
+      sizing = null,
+      identityMissingSince = null;
     const emit = () =>
       changed({ ...state, remaining: candidate ? Math.max(0, candidate.due - now()) : null });
     const stop = (reason) => {
+      if (!state.running) return; // Keep the original stop reason until the next explicit start.
       state.running = false;
       state.reason = reason || 'Stopped';
       candidate = null;
@@ -64,6 +66,7 @@
         seat: s.seats.find((p) => p.hero).id,
       };
       state = { running: true, reason: 'Waiting for your turn', count: 0, spent: 0 };
+      identityMissingSince = null;
       candidate = null;
       awaiting = null;
       sizing = null;
@@ -73,8 +76,22 @@
       if (!state.running) return;
       if (now() >= limits.until)
         return stop('Run duration reached. Restart explicitly when ready.');
-      if (!s || s.currency !== limits.currency || s.seats.find((p) => p.hero)?.id !== limits.seat)
+      if (!s) return stop('Table reading lost. Check the reader and restart Auto.');
+      const hero = s.seats.find((p) => p.hero);
+      if ((s.currency && s.currency !== limits.currency) || (hero && hero.id !== limits.seat))
         return stop('Table identity changed');
+      // Pot labels and seats can briefly disappear during the deal. Missing
+      // identity is not evidence of a different table; no action is allowed here.
+      if (!s.currency || !hero || !s.handId) {
+        candidate = null;
+        identityMissingSince ??= now();
+        if (now() - identityMissingSince >= 3500)
+          return stop('Table details stayed unreadable. Check the table and restart Auto.');
+        state.reason = 'Paused while the table refreshes';
+        emit();
+        return;
+      }
+      identityMissingSince = null;
       if (s.sittingOut)
         return stop('Bet365 marked this seat sitting out. Resume at the table, then restart Auto.');
       const urgent =
