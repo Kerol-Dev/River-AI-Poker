@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="dark" />
+    <title>River · Table companion</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        width: 334px;
+        padding: 23px;
+        margin: 0;
+        background: #1c1b1a;
+        color: #f4ede0;
+        font:
+          12px -apple-system,
+          BlinkMacSystemFont,
+          Arial,
+          sans-serif;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .brand {
+        letter-spacing: 3px;
+        font-size: 14px;
+        font-weight: 800;
+      }
+      .brand b {
+        color: #ff6b5b;
+        font-size: 20px;
+        letter-spacing: 0;
+        margin-right: 6px;
+      }
+      .version {
+        font-size: 9px;
+        color: #998c7c;
+      }
+      h1 {
+        font-size: 26px;
+        letter-spacing: -1px;
+        line-height: 1.15;
+        margin: 0 0 10px;
+      }
+      p {
+        font-size: 12px;
+        color: #b5a794;
+        line-height: 1.65;
+        margin: 0;
+      }
+      .connection {
+        padding: 14px;
+        border: 1px solid #484034;
+        border-radius: 10px;
+        background: #27231e;
+        margin: 20px 0 14px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #867460;
+      }
+      .connection.ready .dot {
+        background: #b9cb9b;
+      }
+      .connection strong {
+        font-size: 12px;
+        display: block;
+      }
+      .connection small {
+        font-size: 10px;
+        color: #ac9b85;
+        display: block;
+        margin-top: 4px;
+      }
+      label {
+        display: block;
+        margin: 13px 0 7px;
+        color: #c2b4a0;
+        font-size: 10px;
+        font-weight: 650;
+      }
+      input {
+        width: 100%;
+        background: #141210;
+        color: #f4ede0;
+        border: 1px solid #554737;
+        padding: 12px;
+        border-radius: 7px;
+        font: 12px inherit;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        border: 0;
+        border-radius: 8px;
+        font:
+          750 12px -apple-system,
+          sans-serif;
+        cursor: pointer;
+        color: #1c1b1a;
+        background: #ff6b5b;
+        margin-top: 9px;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      button.secondary {
+        background: #393027;
+        color: #f4ede0;
+        border: 1px solid #5a4836;
+      }
+      .connection + details {
+        margin-bottom: 12px;
+      }
+      summary {
+        font-size: 11px;
+        color: #c7b69e;
+        cursor: pointer;
+      }
+      details > p {
+        margin-top: 12px;
+        font-size: 11px;
+      }
+      .other-apps {
+        border-top: 1px solid #40362b;
+        margin-top: 21px;
+        padding-top: 17px;
+      }
+      .other-apps h2 {
+        font-size: 12px;
+        margin: 0 0 7px;
+      }
+      .other-apps p {
+        font-size: 11px;
+      }
+      #status {
+        font-size: 11px;
+        line-height: 1.5;
+        color: #ffae97;
+        margin-top: 12px;
+        min-height: 16px;
+      }
+      footer {
+        font-size: 9px;
+        color: #947b60;
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+      }
+      a {
+        color: #c6a889;
+        text-decoration: none;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      summary:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #ffaf93;
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="brand"><b>♠</b>RIVER</span><span class="version">1.4 · CHROME</span>
+    </header>
+    <h1>A clearer view.<br />A calmer table.</h1>
+    <p>Your cards, next move and session.<br />One small companion beside the table.</p>
+    <div id="connection" class="connection">
+      <span class="dot"></span>
+      <div>
+        <strong id="connection-title">Connect to River</strong
+        ><small id="connection-detail">Open the macOS app to get started.</small>
+      </div>
+    </div>
+    <details id="pairing" open>
+      <summary>Pair this browser</summary>
+      <p>In River, open Browser table → Connection and copy your pairing code.</p>
+      <label for="token">Pairing code</label
+      ><input
+        id="token"
+        type="password"
+        autocomplete="off"
+        placeholder="Paste your code"
+        spellcheck="false"
+      /><button id="pair">Connect to River</button>
+    </details>
+    <button id="toggle" class="secondary" disabled>Start reader</button>
+    <p id="status" role="status"></p>
+    <section class="other-apps">
+      <h2>Playing in another app?</h2>
+      <p>
+        Open <b>Screen reader</b> in River. Choose a window and map its cards and amounts with local
+        OCR.
+      </p>
+    </section>
+    <footer>
+      <span>PRIVATE BY DESIGN</span
+      ><a href="https://github.com/kerol-dev/river" target="_blank" rel="noreferrer">Project ↗</a>
+    </footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

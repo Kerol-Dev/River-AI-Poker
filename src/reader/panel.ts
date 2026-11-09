@@ -1,0 +1,20 @@
+import type { PerformanceData } from '../components/Performance';
+import type { OpponentProfile, ObservedAction } from './opponents';
+export type ReaderPanel = {
+  at: number;
+  key: string | null;
+  hole: string[];
+  board: string[];
+  holding: boolean;
+  equity?: number;
+  win?: number;
+  tie?: number;
+  performance?: PerformanceData;
+  profiles: (OpponentProfile & { range: string })[];
+  events: ObservedAction[];
+  reasoning: string[];
+  intent?: string;
+  target?: number;
+  status: string;
+  storageError?: string;
+};

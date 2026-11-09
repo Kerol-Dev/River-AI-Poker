@@ -1,0 +1,22 @@
+name: Bug report
+description: Help us reproduce a reading or interface problem.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include River version, macOS version, reader mode and expected behaviour. Do not include pairing codes, account details or private screenshots.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Prefer a synthetic or play-money example with invented names and amounts.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Reading setup
+      description: Browser adapter or screen OCR? What table layout, card style and currency formatting were used?

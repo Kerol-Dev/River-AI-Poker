@@ -1,0 +1,65 @@
+{
+  "name": "river-holdem-studio",
+  "version": "1.4.0",
+  "description": "A private, local-first macOS Hold’em companion with a compact browser HUD and mapped screen OCR.",
+  "main": "electron/main.cjs",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "tsx --test tests/*.test.ts",
+    "start": "npm run build && electron .",
+    "desktop": "electron .",
+    "preview": "vite preview --host 127.0.0.1",
+    "package:mac": "npm run build:ocr && npm run build && node scripts/package.mjs",
+    "test:ui": "npm run build && node tests/ui.mjs",
+    "build:ocr": "node scripts/build-ocr.mjs",
+    "test:ocr": "node tests/ocr-native.mjs",
+    "release:check": "node scripts/release-check.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [],
+  "author": "kerol-dev and River contributors",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "lucide-react": "^1.70.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "@playwright/test": "^1.65.0",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "electron": "^45.2.3",
+    "jsdom": "^31.0.0",
+    "prettier": "3.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  },
+  "productName": "River",
+  "private": true,
+  "type": "module",
+  "overrides": {
+    "glob": "14.0.4",
+    "minimatch": "11.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kerol-dev/river.git"
+  },
+  "homepage": "https://github.com/kerol-dev/river",
+  "bugs": {
+    "url": "https://github.com/kerol-dev/river/issues"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}
